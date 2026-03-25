@@ -1,0 +1,655 @@
+body{
+font-family: Arial, Helvetica, sans-serif;
+margin:40px;
+background:#f4f6f8;
+}
+
+.panel{
+background:white;
+padding:25px;
+border-radius:10px;
+box-shadow:0 0 10px rgba(0,0,0,0.1);
+}
+
+h2{
+margin-top:0;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+margin-top:20px;
+}
+
+th,td{
+padding:10px;
+border-bottom:1px solid #ddd;
+}
+
+th{
+background:#f2f2f2;
+}
+
+.boton{
+padding:6px 12px;
+border-radius:5px;
+text-decoration:none;
+color:white;
+font-size:12px;
+}
+
+.ver{background:#3498db}
+.descargar{background:#2ecc71}
+.anular{background:#e74c3c}
+
+.faltante{color:red}
+.cargado{color:green}
+.opcional{color:orange}
+
+.barra{
+background:#ddd;
+border-radius:10px;
+overflow:hidden;
+margin-top:10px;
+}
+
+.progreso{
+height:20px;
+background:#27ae60;
+text-align:center;
+color:white;
+width:var(--porcentaje);
+}
+
+.drop{
+border:2px dashed #aaa;
+padding:20px;
+text-align:center;
+background:#fafafa;
+}
+
+.bloque-ddjj{
+background:#f0f6ff;
+border:1px solid #d0def7;
+padding:15px;
+border-radius:6px;
+margin-bottom:20px;
+}
+
+.boton.ddjj{
+background:#2e7d32;
+color:white;
+padding:8px 14px;
+border-radius:5px;
+text-decoration:none;
+}
+
+/* ========================================
+   ESTILOS PARA DOCUMENTOS Y OBLIGACIONES
+   ======================================== */
+
+/* Sección de documentos obligatorios */
+.obligaciones-section {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 30px;
+    overflow: hidden;
+}
+
+.obligaciones-header {
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    color: white;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.obligaciones-header h3 {
+    margin: 0;
+    font-size: 18px;
+}
+
+.obligaciones-header i {
+    margin-right: 10px;
+}
+
+.obligaciones-progress {
+    background: rgba(255,255,255,0.2);
+    border-radius: 20px;
+    height: 10px;
+    width: 200px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    background: #4CAF50;
+    height: 100%;
+    border-radius: 20px;
+    transition: width 0.3s ease;
+}
+
+/* Grid de documentos obligatorios */
+.obligaciones-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 15px;
+    padding: 20px;
+}
+
+.obligacion-item {
+    background: #f8fafc;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 15px;
+    transition: all 0.3s ease;
+}
+
+.obligacion-item:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+}
+
+.obligacion-item.completo {
+    border-left: 4px solid #4CAF50;
+    background: #f1f8e9;
+}
+
+.obligacion-item.pendiente {
+    border-left: 4px solid #ff9800;
+    background: #fff3e0;
+}
+
+.obligacion-item.vencido {
+    border-left: 4px solid #f44336;
+    background: #ffebee;
+}
+
+.obligacion-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.obligacion-titulo {
+    font-weight: 600;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.obligacion-titulo i {
+    color: #1e3c72;
+}
+
+.obligacion-estado {
+    font-size: 12px;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-weight: 500;
+}
+
+.estado-completo {
+    background: #4CAF50;
+    color: white;
+}
+
+.estado-pendiente {
+    background: #ff9800;
+    color: white;
+}
+
+.estado-vencido {
+    background: #f44336;
+    color: white;
+}
+
+.obligacion-fecha {
+    font-size: 13px;
+    color: #666;
+    margin: 8px 0;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.obligacion-documento {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed #ddd;
+}
+
+/* Acciones de documento */
+.documento-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+}
+
+.btn-doc {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.3s ease;
+    text-decoration: none;
+}
+
+.btn-doc i {
+    font-size: 14px;
+}
+
+.btn-ver {
+    background: #2196F3;
+    color: white;
+}
+
+.btn-ver:hover {
+    background: #1976D2;
+}
+
+.btn-descargar {
+    background: #4CAF50;
+    color: white;
+}
+
+.btn-descargar:hover {
+    background: #388E3C;
+}
+
+.btn-imprimir {
+    background: #9C27B0;
+    color: white;
+}
+
+.btn-imprimir:hover {
+    background: #7B1FA2;
+}
+
+.btn-anular {
+    background: #f44336;
+    color: white;
+}
+
+.btn-anular:hover {
+    background: #d32f2f;
+}
+
+.btn-subir {
+    background: #ff9800;
+    color: white;
+}
+
+.btn-subir:hover {
+    background: #f57c00;
+}
+
+/* Modal para subir documentos */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+    background-color: white;
+    margin: 10% auto;
+    padding: 30px;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+    from {
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: #1e3c72;
+}
+
+.close-modal {
+    font-size: 24px;
+    cursor: pointer;
+    color: #999;
+    transition: color 0.3s ease;
+}
+
+.close-modal:hover {
+    color: #333;
+}
+
+/* Timeline de documentos */
+.documentos-timeline {
+    position: relative;
+    padding: 20px 0;
+}
+
+.documentos-timeline::before {
+    content: '';
+    position: absolute;
+    left: 20px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #e0e0e0;
+}
+
+.timeline-item {
+    position: relative;
+    padding-left: 50px;
+    margin-bottom: 25px;
+}
+
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: 14px;
+    top: 0;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #1e3c72;
+    border: 2px solid white;
+    box-shadow: 0 0 0 2px #1e3c72;
+}
+
+.timeline-item.importante::before {
+    background: #f44336;
+    box-shadow: 0 0 0 2px #f44336;
+}
+
+.timeline-date {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 5px;
+}
+
+.timeline-title {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.timeline-desc {
+    color: #666;
+    font-size: 13px;
+    margin-bottom: 10px;
+}
+
+/* Estadísticas de documentos */
+.documentos-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+.stat-number {
+    font-size: 28px;
+    font-weight: 600;
+    color: #1e3c72;
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    font-size: 13px;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stat-icon {
+    font-size: 24px;
+    margin-bottom: 10px;
+    color: #2a5298;
+}
+
+/* Etiquetas de documentos */
+.doc-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-right: 5px;
+}
+
+.tag-dni {
+    background: #e3f2fd;
+    color: #1976D2;
+}
+
+.tag-titulo {
+    background: #f3e5f5;
+    color: #7B1FA2;
+}
+
+.tag-contrato {
+    background: #e8f5e9;
+    color: #388E3C;
+}
+
+.tag-ddjj {
+    background: #fff3e0;
+    color: #f57c00;
+}
+
+/* ========================================
+   ESTILOS PARA templates/legajo_detalle.html
+   ======================================== */
+.documentos-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+        
+        .documento-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+        
+        .documento-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        }
+        
+        .documento-header {
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .documento-tipo {
+            font-weight: 600;
+            font-size: 16px;
+        }
+        
+        .documento-badge {
+            background: rgba(255,255,255,0.2);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        
+        .documento-body {
+            padding: 15px;
+        }
+        
+        .documento-info {
+            margin-bottom: 10px;
+        }
+        
+        .documento-info p {
+            margin: 5px 0;
+            color: #666;
+            font-size: 13px;
+        }
+        
+        .documento-info i {
+            width: 20px;
+            color: #1e3c72;
+        }
+        
+        .documento-footer {
+            padding: 15px;
+            background: #f8fafc;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .btn-doc {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-ver {
+            background: #2196F3;
+            color: white;
+        }
+        
+        .btn-descargar {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .btn-imprimir {
+            background: #9C27B0;
+            color: white;
+        }
+        
+        .btn-anular {
+            background: #f44336;
+            color: white;
+        }
+        
+        .btn-pdf {
+            background: #d32f2f;
+            color: white;
+        }
+        
+        .documentos-obligatorios {
+            margin: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .obligatorio-header {
+            background: #f8fafc;
+            padding: 15px 20px;
+            border-bottom: 2px solid #1e3c72;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .obligatorio-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .obligatorio-item:last-child {
+            border-bottom: none;
+        }
+        
+        .obligatorio-nombre {
+            flex: 2;
+            font-weight: 500;
+        }
+        
+        .obligatorio-estado {
+            flex: 1;
+        }
+        
+        .obligatorio-fecha {
+            flex: 1;
+            color: #666;
+            font-size: 13px;
+        }
+        
+        .obligatorio-acciones {
+            flex: 1;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .estado-indicador {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .estado-completo {
+            background: #4CAF50;
+        }
+        
+        .estado-pendiente {
+            background: #ff9800;
+        }
+        
+        .estado-vencido {
+            background: #f44336;
+        }

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Generar Certificado Digital - DDJJ Digital</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/estilos.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/botones.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/panel.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/firma.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}">
+</head>
+<body>
+    <div class="container certificado-container">
+        <div class="header certificado-header">
+            <h1>🔐 Certificado Digital</h1>
+            <p>Autoridad Certificante - HCD Posadas</p>
+        </div>
+        
+        <div class="content">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <div class="info-card">
+                <h3>📋 Agente: {{ legajo.apellido }} {{ legajo.nombre }}</h3>
+                <div class="info-row">
+                    <span class="info-label">Legajo:</span>
+                    <span class="info-value">{{ legajo.legajo_id }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">DNI:</span>
+                    <span class="info-value">{{ legajo.dni }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Email:</span>
+                    <span class="info-value">{{ legajo.email }}</span>
+                </div>
+            </div>
+            
+            {% if tiene_certificado %}
+                <div class="warning-box">
+                    <p>⚠️ <strong>Este agente ya tiene un certificado activo.</strong></p>
+                    <p>Si genera uno nuevo, el anterior será revocado automáticamente.</p>
+                </div>
+            {% endif %}
+            
+            <form method="POST" class="form-certificado">
+                <div class="form-group">
+                    <label>🔑 PIN de Firma (4-8 dígitos):</label>
+                    <input type="password" name="pin" required minlength="4" maxlength="8" 
+                           placeholder="Ingrese su PIN de firma" class="form-control">
+                </div>
+                
+                <div class="form-group">
+                    <label>✅ Confirmar PIN:</label>
+                    <input type="password" name="confirm_pin" required minlength="4" maxlength="8" 
+                           placeholder="Confirme su PIN" class="form-control">
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">🎓 Generar Certificado</button>
+                    <a href="{{ url_for('ver_legajo', legajo_id=legajo.legajo_id) }}" class="btn btn-secondary">⬅️ Volver</a>
+                </div>
+            </form>
+            
+            <div class="info-box">
+                <p><strong>📌 Importante:</strong></p>
+                <p>El PIN será utilizado para firmar digitalmente sus Declaraciones Juradas.</p>
+                <p>Guárdelo en un lugar seguro. No lo comparta con nadie.</p>
+                <p>El certificado tiene validez por 1 año.</p>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Honorable Concejo Deliberante de Posadas - Dirección de Personal</p>
+            <p>Sistema de Gestión de Legajos - Versión con Firma Digital PKI</p>
+        </div>
+    </div>
+</body>
+</html>

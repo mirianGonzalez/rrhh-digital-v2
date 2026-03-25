@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Gestión de Usuarios - RRHH DIGITAL</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/estilos.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/panel.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tabla.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}">
+</head>
+<body>
+    <div class="sistema-wrapper">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <i class="fas fa-building fa-2x"></i>
+                <h3>RRHH DIGITAL</h3>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="{{ url_for('panel') }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                <li><a href="{{ url_for('listar_legajos') }}"><i class="fas fa-folder"></i> Legajos</a></li>
+                <li><a href="{{ url_for('ver_auditoria') }}"><i class="fas fa-history"></i> Auditoría</a></li>
+                <li><a href="{{ url_for('listar_usuarios') }}" class="active"><i class="fas fa-users-cog"></i> Usuarios</a></li>
+                <li><a href="{{ url_for('ver_manual') }}"><i class="fas fa-book"></i> Manual</a></li>
+                <li><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Salir</a></li>
+            </ul>
+        </div>
+        
+        <div class="main-content">
+            <div class="top-bar">
+                <h2><i class="fas fa-users-cog"></i> Gestión de Usuarios</h2>
+                <div class="user-info">
+                    <i class="fas fa-user-circle"></i>
+                    <span>{{ session.usuario }} (ADMIN)</span>
+                    <a href="{{ url_for('cambiar_password') }}" class="btn btn-sm btn-light" title="Cambiar contraseña">
+                        <i class="fas fa-key"></i>
+                    </a>
+                </div>
+            </div>
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash-message {{ category }} m-4">
+                            <i class="fas fa-{% if category == 'error' %}exclamation-circle{% else %}check-circle{% endif %}"></i>
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <div class="table-search">
+                <h3>Usuarios del Sistema</h3>
+                <a href="{{ url_for('nuevo_usuario') }}" class="btn btn-primary">
+                    <i class="fas fa-user-plus"></i> Nuevo Usuario
+                </a>
+            </div>
+            
+            <div class="table-container m-4">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Usuario</th>
+                            <th>Rol</th>
+                            <th>Email</th>
+                            <th>Estado</th>
+                            <th>Intentos</th>
+                            <th>Último Acceso</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in usuarios %}
+                        <tr>
+                            <td>{{ user.id }}</td>
+                            <td><strong>{{ user.username }}</strong></td>
+                            <td>
+                                <span class="badge badge-{{ 'danger' if user.rol == 'ADMIN' else 'primary' if user.rol == 'RRHH' else 'secondary' }}">
+                                    {{ user.rol }}
+                                </span>
+                            </td>
+                            <td>{{ user.email or '-' }}</td>
+                            <td>
+                                {% if user.bloqueado %}
+                                    <span class="badge badge-danger">BLOQUEADO</span>
+                                {% elif user.activo %}
+                                    <span class="badge badge-success">ACTIVO</span>
+                                {% else %}
+                                    <span class="badge badge-secondary">INACTIVO</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ user.intentos_fallidos }}/5</td>
+                            <td>{{ user.ultimo_acceso[:16] if user.ultimo_acceso else '-' }}</td>
+                            <td>
+                                <div class="table-actions">
+                                    <a href="{{ url_for('editar_usuario', user_id=user.id) }}" class="btn btn-sm btn-primary" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    {% if user.username != 'admin' and user.id != session.user_id %}
+                                    <form method="POST" action="{{ url_for('eliminar_usuario', user_id=user.id) }}" style="display: inline;" onsubmit="return confirm('¿Eliminar usuario {{ user.username }}?')">
+                                        <button type="submit" class="btn btn-sm btn-danger" title="Eliminar">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                    <button class="btn btn-sm btn-warning" onclick="resetPassword({{ user.id }})" title="Resetear contraseña">
+                                        <i class="fas fa-key"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal Reset Password -->
+    <div id="modalReset" class="modal-overlay" style="display: none;">
+        <div class="modal-container">
+            <div class="modal-content">
+                <div class="modal-header bg-warning">
+                    <h3><i class="fas fa-key"></i> Resetear Contraseña</h3>
+                    <button class="close-modal" onclick="cerrarModal()">&times;</button>
+                </div>
+                <form method="POST" id="formReset">
+                    <div class="modal-body">
+                        <p>La nueva contraseña será: <strong>Temp2026!</strong></p>
+                        <p class="text-muted">El usuario deberá cambiarla en el primer acceso.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" onclick="cerrarModal()" class="btn btn-light">Cancelar</button>
+                        <button type="submit" class="btn btn-warning">Resetear Contraseña</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function resetPassword(userId) {
+            document.getElementById('formReset').action = `/admin/usuario/${userId}/reset_password`;
+            document.getElementById('modalReset').style.display = 'block';
+        }
+        
+        function cerrarModal() {
+            document.getElementById('modalReset').style.display = 'none';
+        }
+        
+        window.onclick = function(event) {
+            const modal = document.getElementById('modalReset');
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

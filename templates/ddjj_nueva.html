@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Nueva Declaración Jurada - RRHH DIGITAL</title>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Estilos del sistema -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/estilos.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/panel.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/ddjj.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/botones.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/documentos.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/modal.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}">
+</head>
+<body>
+    <div class="sistema-wrapper">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <i class="fas fa-building fa-2x"></i>
+                <h3>RRHH DIGITAL</h3>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="{{ url_for('panel') }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                <li><a href="{{ url_for('listar_legajos') }}"><i class="fas fa-folder"></i> Legajos</a></li>
+                <li><a href="{{ url_for('ver_auditoria') }}"><i class="fas fa-history"></i> Auditoría</a></li>
+                <li><a href="{{ url_for('ver_manual') }}"><i class="fas fa-book"></i> Manual</a></li>
+                <li><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Salir</a></li>
+            </ul>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="top-bar">
+                <h2><i class="fas fa-file-pdf"></i> Nueva Declaración Jurada</h2>
+                <div class="user-info">
+                    <i class="fas fa-user-circle"></i>
+                    <span>{{ session.usuario }} ({{ session.rol }})</span>
+                </div>
+            </div>
+            
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash-message {{ category }} m-4">
+                            <i class="fas fa-{% if category == 'error' %}exclamation-circle{% else %}check-circle{% endif %}"></i>
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <!-- Verificación de documentos obligatorios -->
+            <div class="card m-4">
+                <div class="card-header bg-primary text-white">
+                    <h3><i class="fas fa-clipboard-check"></i> Verificación de Documentos Obligatorios</h3>
+                </div>
+                <div class="card-body">
+                    <div class="flex align-center gap-4 mb-4">
+                        <div class="progreso-circular" data-progreso="{{ progreso_documentos }}">
+                                <svg width="80" height="80">
+                                    <circle class="bg" cx="40" cy="40" r="36" stroke="#e0e0e0" stroke-width="4" fill="none"/>
+                                    <circle class="progress" cx="40" cy="40" r="36" stroke="#4CAF50" stroke-width="4" fill="none"
+                                            stroke-dasharray="226.2" stroke-dashoffset="{{ 226.2 - (226.2 * progreso_documentos / 100) }}"/>
+                                    <text x="40" y="45" text-anchor="middle" fill="#333" font-size="16">{{ progreso_documentos }}%</text>
+                                </svg>
+                            </div>
+                        <div>
+                            <h4>Documentación del Agente</h4>
+                            <p><strong>{{ completados }}/{{ total_requeridos }}</strong> documentos obligatorios completados</p>
+                            {% if completados >= total_requeridos %}
+                                <span class="badge badge-success">✓ REQUISITOS CUMPLIDOS</span>
+                            {% else %}
+                                <span class="badge badge-warning">⚠ FALTAN DOCUMENTOS</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Lista de documentos faltantes -->
+                    {% if documentos_faltantes %}
+                        <div class="alert alert-warning">
+                            <h5><i class="fas fa-exclamation-triangle"></i> Documentos pendientes:</h5>
+                            <ul class="mt-2">
+                                {% for doc in documentos_faltantes %}
+                                    <li>{{ doc.nombre }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Información del Agente -->
+            <div class="card m-4">
+                <div class="card-header">
+                    <h3><i class="fas fa-user"></i> Agente: {{ legajo.apellido }}, {{ legajo.nombre }}</h3>
+                </div>
+                <div class="card-body">
+                    <div class="grid grid-3 gap-4">
+                        <div>
+                            <label>Legajo:</label>
+                            <strong>{{ legajo.legajo_id }}</strong>
+                        </div>
+                        <div>
+                            <label>DNI:</label>
+                            <strong>{{ legajo.dni }}</strong>
+                        </div>
+                        <div>
+                            <label>Año Declaración:</label>
+                            <strong>{{ anio }}</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Confirmación de creación -->
+            <div class="card m-4">
+                <div class="card-body text-center p-5">
+                    <i class="fas fa-file-pdf fa-4x text-primary mb-4"></i>
+                    <h2 class="mb-3">¿Desea crear una nueva Declaración Jurada?</h2>
+                    <p class="text-muted mb-4">Se creará un formulario en blanco para el año {{ anio }} que deberá completar con los datos del agente.</p>
+                    
+                    {% if completados >= total_requeridos %}
+                        <form method="POST" action="{{ url_for('nueva_ddjj', legajo_id=legajo.legajo_id) }}">
+                            <div class="flex justify-center gap-3">
+                                <a href="{{ url_for('ver_legajo', legajo_id=legajo.legajo_id) }}" class="btn btn-light btn-lg">
+                                    <i class="fas fa-times"></i> Cancelar
+                                </a>
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-check"></i> Sí, crear DDJJ {{ anio }}
+                                </button>
+                            </div>
+                        </form>
+                    {% else %}
+                        <div class="alert alert-danger">
+                            <i class="fas fa-lock"></i> Debe completar todos los documentos obligatorios antes de generar la DDJJ.
+                        </div>
+                        <a href="{{ url_for('ver_legajo', legajo_id=legajo.legajo_id) }}" class="btn btn-primary">
+                            <i class="fas fa-arrow-left"></i> Volver al Legajo
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

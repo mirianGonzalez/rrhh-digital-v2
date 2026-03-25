@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detector Coordenadas PDF</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}">
+</head>
+<body>
+    <h2>Detector de Coordenadas</h2>
+
+    <canvas id="pdfCanvas"></canvas>
+
+    <p id="coords"></p>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+    <script>
+
+    const url = "/static/pdf/plantilla_ddjj_interactivo.pdf"
+
+    pdfjsLib.getDocument(url).promise.then(pdf => {
+
+        pdf.getPage(1).then(page => {
+
+            const scale = 1.5
+
+            const viewport = page.getViewport({scale})
+
+            const canvas = document.getElementById("pdfCanvas")
+
+            const context = canvas.getContext("2d")
+
+            canvas.height = viewport.height
+            canvas.width = viewport.width
+
+            page.render({
+                canvasContext: context,
+                viewport: viewport
+            })
+
+            canvas.addEventListener("mousemove", function(e){
+
+                const rect = canvas.getBoundingClientRect()
+
+                const x = e.clientX - rect.left
+                const y = canvas.height - (e.clientY - rect.top)
+
+                document.getElementById("coords").innerText =
+                    "X: "+Math.round(x)+" Y: "+Math.round(y)
+
+            })
+
+        })
+
+    })
+
+    </script>
+</body>
+</html>

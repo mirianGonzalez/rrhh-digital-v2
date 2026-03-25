@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Crear Agente</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}">
+</head>
+<body>
+    <h2>Crear agente</h2>
+
+    <form method="POST">
+
+        <label>Legajo</label><br>
+        <input type="text" name="legajo">
+
+        <br><br>
+
+        <label>Nombre</label><br>
+        <input type="text" name="nombre">
+
+        <br><br>
+
+        <label>DNI</label><br>
+        <input type="text" name="dni">
+
+        <br><br>
+
+        <label>CUIL</label><br>
+        <input type="text" name="cuil">
+
+        <br><br>
+
+        <label>Cargo</label><br>
+        <input type="text" name="cargo">
+
+        <br><br>
+
+        <label>Dependencia</label><br>
+        <input type="text" name="dependencia">
+
+        <br><br>
+
+        <button type="submit">Guardar</button>
+
+        </form>
+
+        <br>
+
+        <a href="/legajos">Volver</a>
+</body>
+</html>

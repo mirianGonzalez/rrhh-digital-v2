@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+
+<title>Declaración Jurada del Agente</title>
+
+<link rel="stylesheet" href="/static/css/sistema.css">
+<link rel="stylesheet" href="/static/css/legajo.css">
+<link rel="stylesheet" href="/static/css/estilo.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}">
+
+</head>
+
+<body>
+
+<div class="contenedor">
+
+<h1>Declaración Jurada del Agente</h1>
+
+<form method="POST" action="/preview_ddjj">
+
+<input type="hidden" name="legajo_id" value="{{legajo_id}}">
+
+<h2>Datos Personales</h2>
+
+<div class="grid">
+
+<div>
+<label>Apellido y Nombre</label>
+<input name="apellido_nombre" required>
+</div>
+
+<div>
+<label>DNI</label>
+<input name="dni" required>
+</div>
+
+<div>
+<label>Fecha de nacimiento</label>
+<input type="date" name="fecha_nacimiento">
+</div>
+
+<div>
+<label>Lugar de nacimiento</label>
+<input name="lugar_nacimiento">
+</div>
+
+<div>
+<label>Estado civil</label>
+<select name="estado_civil">
+<option value="">Seleccionar</option>
+<option>Soltero</option>
+<option>Casado</option>
+<option>Divorciado</option>
+<option>Separado</option>
+<option>Viudo</option>
+<option>Conviviente</option>
+</select>
+</div>
+
+<div>
+<label>Email</label>
+<input type="email" name="email">
+</div>
+
+</div>
+
+
+<h2>Teléfonos</h2>
+
+<div class="grid">
+
+<div>
+<label>Teléfono fijo</label>
+<input name="telefono_fijo">
+</div>
+
+<div>
+<label>Teléfono celular</label>
+<input name="telefono_celular">
+</div>
+
+</div>
+
+
+<h2>Familiares a Cargo</h2>
+
+<table>
+
+<tr>
+<th>Apellido y Nombre</th>
+<th>Parentesco</th>
+<th>Convive</th>
+<th>Fecha Nac</th>
+<th>DNI</th>
+</tr>
+
+{% for i in range(1,8) %}
+
+<tr>
+<td><input name="h{{i}}_nombre"></td>
+<td><input name="h{{i}}_parentesco"></td>
+<td><input name="h{{i}}_convive"></td>
+<td><input type="date" name="h{{i}}_nac"></td>
+<td><input name="h{{i}}_dni"></td>
+</tr>
+
+{% endfor %}
+
+</table>
+
+
+<h2>Padres y Hermanos</h2>
+
+<table>
+
+<tr>
+<th>Apellido y Nombre</th>
+<th>Parentesco</th>
+<th>Convive</th>
+<th>Fecha Nac</th>
+<th>DNI</th>
+</tr>
+
+{% for i in range(1,7) %}
+
+<tr>
+<td><input name="ph{{i}}_apellido"></td>
+<td><input name="ph{{i}}_parentesco"></td>
+<td><input name="ph{{i}}_convive"></td>
+<td><input type="date" name="ph{{i}}_fecha_nac"></td>
+<td><input name="ph{{i}}_dni"></td>
+</tr>
+
+{% endfor %}
+
+</table>
+
+
+<h2>Firma del Agente</h2>
+
+<p>Firmar dentro del recuadro</p>
+
+<canvas id="firma" width="400" height="150"></canvas>
+
+<input type="hidden" name="firma_base64" id="firma_base64">
+
+<div class="acciones">
+
+<button type="button" onclick="limpiarFirma()" class="boton boton-limpiar">
+Limpiar Firma
+</button>
+
+<button type="submit" class="boton boton-ddjj">
+Generar Declaración Jurada
+</button>
+
+</div>
+
+</form>
+
+</div>
+
+
+<script>
+
+let canvas=document.getElementById("firma")
+let ctx=canvas.getContext("2d")
+
+let dibujando=false
+
+canvas.addEventListener("mousedown",()=>{dibujando=true})
+
+canvas.addEventListener("mouseup",()=>{
+dibujando=false
+ctx.beginPath()
+})
+
+canvas.addEventListener("mousemove",(e)=>{
+if(!dibujando)return
+ctx.lineWidth=2
+ctx.lineCap="round"
+ctx.lineTo(e.offsetX,e.offsetY)
+ctx.stroke()
+ctx.beginPath()
+ctx.moveTo(e.offsetX,e.offsetY)
+})
+
+function limpiarFirma(){
+ctx.clearRect(0,0,canvas.width,canvas.height)
+}
+
+document.querySelector("form").addEventListener("submit",function(){
+
+let dataURL=canvas.toDataURL()
+
+document.getElementById("firma_base64").value=dataURL
+
+})
+
+</script>
+
+</body>
+</html>

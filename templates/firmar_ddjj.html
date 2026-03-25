@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Firmar Declaración Jurada - DIRECCIÓN DE PERSONAL Digital</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/estilos.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/botones.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/ddjj.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/firma.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}">
+</head>
+<body>
+    <div class="container firma-container">
+        <div class="header firma-header">
+            <h1>✍️ Firmar Declaración Jurada</h1>
+            <p>Firma Digital con Certificado PKI</p>
+        </div>
+        
+        <div class="content">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <div class="info-card">
+                <h3>📄 Declaración Jurada {{ ddjj.anio }}</h3>
+                <div class="info-row">
+                    <span class="info-label">Agente:</span>
+                    <span class="info-value">{{ agente_nombre }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Legajo:</span>
+                    <span class="info-value">{{ legajo_id }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Año:</span>
+                    <span class="info-value">{{ ddjj.anio }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Estado:</span>
+                    <span class="info-value">
+                        <span class="badge badge-warning">BORRADOR</span>
+                    </span>
+                </div>
+            </div>
+            
+            <div class="signature-area">
+                <h3>🔐 Firma Digital</h3>
+                <p>Para firmar electrónicamente esta Declaración Jurada, ingrese su PIN personal:</p>
+                
+                <form method="POST" class="form-firma">
+                    <div class="pin-input">
+                        <input type="password" name="pin" placeholder="••••" maxlength="8" 
+                               required autofocus class="pin-field">
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-success">✅ Firmar con mi Certificado Digital</button>
+                        <a href="{{ url_for('ver_legajo', legajo_id=legajo_id) }}" class="btn btn-secondary">⬅️ Cancelar</a>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="legal-info">
+                <p><strong>⚠️ Importante:</strong></p>
+                <p>Al firmar digitalmente, usted está aceptando los términos de la Declaración Jurada.</p>
+                <p>La firma tiene validez legal conforme a la Ley de Firma Digital (Ley 25.506).</p>
+                <p>Una vez firmada, la DDJJ será enviada al Director para su co-firma.</p>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Honorable Concejo Deliberante de Posadas - Dirección de Personal</p>
+            <p>Firma Digital PKI - Validez Legal</p>
+        </div>
+    </div>
+</body>
+</html>

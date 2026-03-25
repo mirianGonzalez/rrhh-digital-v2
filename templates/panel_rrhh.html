@@ -1,0 +1,108 @@
+{% extends "layout.html" %}
+
+{% block contenido %}
+
+<h1>📊 Panel Inteligente RRHH</h1>
+
+<h3>👥 Total de agentes: {{total_agentes}}</h3>
+<h3>🔴 Legajos incompletos: {{total_incompletos}}</h3>
+<h3>📄 Documentos obligatorios faltantes: {{total_faltantes}}</h3>
+<h3>🚫 Documentos anulados: {{total_anulados}}</h3>
+
+<hr>
+
+<h2>🔴 Legajos incompletos</h2>
+
+<table border="1">
+
+<tr>
+<th>Legajo</th>
+<th>Nombre</th>
+<th>Abrir</th>
+<th>DDJJ</th>
+</tr>
+
+{% for ag in incompletos %}
+
+<tr>
+
+<td>{{ ag.legajo }}</td>
+<td>{{ ag.nombre }}</td>
+
+<td>
+<a href="/legajo/{{ag.legajo}}">
+Abrir legajo
+</a>
+</td>
+
+<td>
+<a class="boton boton-ddjj" href="/formulario_ddjj/{{ag.legajo}}">
+Completar DDJJ
+</a>
+</td>
+
+</tr>
+
+{% endfor %}
+
+</table>
+
+<br><br>
+
+<h2>📄 Documentos faltantes</h2>
+
+<table border="1">
+
+<tr>
+<th>Legajo</th>
+<th>Nombre</th>
+<th>Documento faltante</th>
+</tr>
+
+{% for doc in faltantes %}
+
+<tr>
+
+<td>{{doc.legajo}}</td>
+<td>{{doc.nombre}}</td>
+<td>{{doc.tipo_documento}}</td>
+
+</tr>
+
+{% endfor %}
+
+</table>
+
+<br><br>
+
+<h2>🚫 Últimos documentos anulados</h2>
+
+<table border="1">
+
+<tr>
+<th>Legajo</th>
+<th>Documento</th>
+<th>Archivo</th>
+<th>Fecha</th>
+</tr>
+
+{% for doc in anulados %}
+
+<tr>
+
+<td>{{doc.legajo}}</td>
+<td>{{doc.tipo}}</td>
+<td>{{doc.archivo}}</td>
+<td>{{doc.fecha}}</td>
+
+</tr>
+
+{% endfor %}
+
+</table>
+
+<br>
+
+<a href="/legajos">Volver a Legajos</a>
+
+{% endblock %}

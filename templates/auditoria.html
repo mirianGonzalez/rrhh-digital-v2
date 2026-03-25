@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Auditoría - RRHH DIGITAL</title>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Estilos del sistema -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/estilos.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/panel.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/auditoria.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tabla.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/botones.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}">
+</head>
+<body>
+    <div class="sistema-wrapper">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <i class="fas fa-building fa-2x"></i>
+                <h3>RRHH DIGITAL</h3>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="{{ url_for('panel') }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                <li><a href="{{ url_for('listar_legajos') }}"><i class="fas fa-folder"></i> Legajos</a></li>
+                <li><a href="{{ url_for('ver_auditoria') }}" class="active"><i class="fas fa-history"></i> Auditoría</a></li>
+                <li><a href="{{ url_for('ver_manual') }}"><i class="fas fa-book"></i> Manual</a></li>
+                <li><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Salir</a></li>
+            </ul>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="top-bar">
+                <h2><i class="fas fa-history"></i> Registro de Auditoría</h2>
+                <div class="user-info">
+                    <i class="fas fa-user-circle"></i>
+                    <span>{{ session.usuario }} ({{ session.rol }})</span>
+                </div>
+            </div>
+            
+            <!-- Filtros de auditoría -->
+            <div class="table-filters">
+                <div class="filter-group">
+                    <label><i class="fas fa-user"></i> Usuario:</label>
+                    <select id="filtroUsuario">
+                        <option value="todos">Todos</option>
+                        {% for usuario in usuarios %}
+                        <option value="{{ usuario }}">{{ usuario }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label><i class="fas fa-tag"></i> Acción:</label>
+                    <select id="filtroAccion">
+                        <option value="todos">Todas</option>
+                        <option value="LOGIN">Login</option>
+                        <option value="CREO LEGAJO">Creación Legajo</option>
+                        <option value="SUBIO DOCUMENTO">Subida Documento</option>
+                        <option value="GENERÓ DDJJ">Generación DDJJ</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label><i class="fas fa-calendar"></i> Desde:</label>
+                    <input type="date" id="fechaDesde">
+                </div>
+                <div class="filter-group">
+                    <label><i class="fas fa-calendar"></i> Hasta:</label>
+                    <input type="date" id="fechaHasta">
+                </div>
+                <button class="btn btn-primary" onclick="aplicarFiltros()">
+                    <i class="fas fa-filter"></i> Filtrar
+                </button>
+                <button class="btn btn-light" onclick="limpiarFiltros()">
+                    <i class="fas fa-times"></i> Limpiar
+                </button>
+            </div>
+            
+            <!-- Tabla de auditoría -->
+            <div class="table-container m-4">
+                <table class="table" id="tablaAuditoria">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Usuario</th>
+                            <th>Rol</th>
+                            <th>Acción</th>
+                            <th>Legajo</th>
+                            <th>Detalle</th>
+                            <th>IP</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for reg in registros %}
+                        <tr>
+                            <td>{{ reg.fecha }}</td>
+                            <td>
+                                <strong>{{ reg.usuario }}</strong>
+                            </td>
+                            <td>
+                                <span class="badge badge-{{ 'primary' if reg.rol == 'ADMIN' else 'secondary' }}">
+                                    {{ reg.rol }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge badge-{{ 'success' if 'LOGIN' in reg.accion else 'info' }}">
+                                    {{ reg.accion }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if reg.legajo_id %}
+                                    <a href="{{ url_for('ver_legajo', legajo_id=reg.legajo_id) }}">
+                                        {{ reg.legajo_id }}
+                                    </a>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>{{ reg.detalle or '-' }}</td>
+                            <td><code>{{ reg.ip or '-' }}</code></td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center p-5">
+                                <i class="fas fa-history fa-3x text-muted mb-3"></i>
+                                <p>No hay registros de auditoría</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Exportar -->
+            <div class="flex justify-end gap-3 m-4">
+                <button class="btn btn-success" onclick="exportarExcel()">
+                    <i class="fas fa-file-excel"></i> Exportar Excel
+                </button>
+                <button class="btn btn-danger" onclick="exportarPDF()">
+                    <i class="fas fa-file-pdf"></i> Exportar PDF
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="{{ url_for('static', filename='js/auditoria.js') }}"></script>
+</body>
+</html>

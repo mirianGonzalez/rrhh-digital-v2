@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Co-firmar Declaración Jurada - Director</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/estilos.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/botones.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/panel.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/firma.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}">
+</head>
+<body>
+    <div class="container cofirma-container">
+        <div class="header cofirma-header">
+            <h1>👨‍⚖️ Co-firma Director-a</h1>
+            <p>Segunda firma - Validez Legal</p>
+        </div>
+        
+        <div class="content">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <div class="info-card">
+                <h3>📄 Declaración Jurada para Co-firma</h3>
+                <div class="info-row">
+                    <span class="info-label">Agente:</span>
+                    <span class="info-value">{{ agente_nombre }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Legajo:</span>
+                    <span class="info-value">{{ ddjj.legajo_id }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Año:</span>
+                    <span class="info-value">{{ ddjj.anio }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Estado:</span>
+                    <span class="info-value">
+                        {% if ddjj.estado == 'FIRMADA_AGENTE' %}
+                            <span class="badge badge-success">✅ Firmada por Agente</span>
+                            <span class="badge badge-warning">⏳ Pendiente Co-firma</span>
+                        {% else %}
+                            <span class="badge badge-info">{{ ddjj.estado }}</span>
+                        {% endif %}
+                    </span>
+                </div>
+                {% if ddjj.codigo_validacion %}
+                <div class="info-row">
+                    <span class="info-label">Código Validación:</span>
+                    <span class="info-value"><code>{{ ddjj.codigo_validacion }}</code></span>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="cofirma-area">
+                <h3>🔏 Co-firma del Director</h3>
+                <p>Como Director/a del HCD, usted está a punto de co-firmar esta Declaración Jurada.</p>
+                <p>La co-firma otorga <strong>validez legal completa</strong> al documento.</p>
+                
+                <form method="POST" class="form-cofirma">
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">✅ Co-firmar Declaración Jurada</button>
+                        <a href="{{ url_for('listar_ddjj') }}" class="btn btn-secondary">⬅️ Volver al Listado</a>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="legal-info">
+                <p><strong>📌 Consecuencias de la co-firma:</strong></p>
+                <ul>
+                    <li>La DDJJ queda con doble firma digital (Agente + Director)</li>
+                    <li>El documento adquiere validez legal plena</li>
+                    <li>Se notificará al agente vía email</li>
+                    <li>El PDF quedará sellado digitalmente como válido</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Honorable Concejo Deliberante de Posadas - Dirección de Personal</p>
+            <p>Firma Digital PKI - Doble Firma con Validez Legal</p>
+        </div>
+    </div>
+</body>
+</html>

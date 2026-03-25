@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Listado de agentes</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}">
+</head>
+<body>
+    <h2>Listado de agentes</h2>
+
+    <form method="POST" action="/buscar_agente">
+    <input type="text" name="buscar" placeholder="Buscar por nombre, DNI o legajo">
+    <button type="submit">Buscar</button>
+    </form>
+
+    <br>
+
+    <a href="/crear_agente">Crear agente</a>
+
+    <br><br>
+
+    <table border="1">
+
+    <tr>
+    <th>Legajo</th>
+    <th>Nombre</th>
+    <th>DNI</th>
+    <th>Abrir</th>
+    </tr>
+
+    {% for a in agentes %}
+
+    <tr>
+    <td>{{ a.legajo }}</td>
+    <td>{{ a.nombre }}</td>
+    <td>{{ a.dni }}</td>
+
+    <td>
+    <a href="/legajo/{{ a.legajo }}">Abrir</a>
+    </td>
+
+    </tr>
+
+    {% endfor %}
+
+    </table>
+</body>
+</html>

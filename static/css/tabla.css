@@ -1,0 +1,260 @@
+/* ========================================
+   TABLAS (estilos para tablas)
+   ======================================== */
+.table-container {
+    background: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    overflow: auto;
+    margin: 20px;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.table thead {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+}
+
+.table thead th {
+    padding: 15px;
+    text-align: left;
+    font-weight: 500;
+    text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    position: relative;
+}
+
+.table thead th:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 25%;
+    height: 50%;
+    width: 1px;
+    background: rgba(255,255,255,0.2);
+}
+
+.table tbody tr {
+    border-bottom: 1px solid var(--gray-200);
+    transition: var(--transition);
+}
+
+.table tbody tr:hover {
+    background: var(--gray-50);
+}
+
+.table tbody td {
+    padding: 12px 15px;
+    color: var(--gray-700);
+}
+
+/* Tabla con filas seleccionables */
+.table tbody tr.selectable {
+    cursor: pointer;
+}
+
+.table tbody tr.selected {
+    background: rgba(30, 60, 114, 0.1);
+    border-left: 3px solid var(--primary);
+}
+
+/* Tabla con borde */
+.table-bordered {
+    border: 1px solid var(--gray-200);
+}
+
+.table-bordered th,
+.table-bordered td {
+    border: 1px solid var(--gray-200);
+}
+
+/* Tabla con filas zebra */
+.table-striped tbody tr:nth-child(even) {
+    background: var(--gray-50);
+}
+
+/* Tabla compacta */
+.table-sm th,
+.table-sm td {
+    padding: 8px 10px;
+    font-size: 13px;
+}
+
+/* Tabla con acciones */
+.table-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.table-actions .btn {
+    padding: 4px 8px;
+    font-size: 12px;
+}
+
+/* Estados en tabla */
+.table .estado-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.table .estado-activo {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.table .estado-inactivo {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.table .estado-pendiente {
+    background: #fff3e0;
+    color: #ef6c00;
+}
+
+.table .estado-borrador {
+    background: #e3f2fd;
+    color: #1565c0;
+}
+
+.table .estado-finalizada {
+    background: #e0f2f1;
+    color: #00695c;
+}
+
+/* Paginación */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    padding: 20px;
+}
+
+.pagination-item {
+    min-width: 35px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--border-radius);
+    background: white;
+    border: 1px solid var(--gray-200);
+    color: var(--gray-700);
+    text-decoration: none;
+    transition: var(--transition);
+    font-size: 13px;
+}
+
+.pagination-item:hover {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.pagination-item.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.pagination-item.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+/* Búsqueda en tabla */
+.table-search {
+    padding: 15px 20px;
+    border-bottom: 1px solid var(--gray-200);
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.table-search input {
+    flex: 1;
+    min-width: 250px;
+    padding: 10px 15px;
+    border: 2px solid var(--gray-200);
+    border-radius: var(--border-radius);
+    font-size: 14px;
+    transition: var(--transition);
+}
+
+.table-search input:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.table-search .search-info {
+    font-size: 13px;
+    color: var(--gray-500);
+}
+
+/* Filtros de tabla */
+.table-filters {
+    padding: 15px 20px;
+    background: var(--gray-50);
+    border-bottom: 1px solid var(--gray-200);
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.filter-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.filter-group label {
+    font-size: 13px;
+    color: var(--gray-600);
+}
+
+.filter-group select {
+    padding: 6px 10px;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--border-radius-sm);
+    background: white;
+    font-size: 13px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .table-container {
+        margin: 10px;
+        overflow-x: auto;
+    }
+    
+    .table {
+        min-width: 800px;
+    }
+    
+    .table-search {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .table-search input {
+        width: 100%;
+    }
+    
+    .pagination {
+        flex-wrap: wrap;
+    }
+}

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Co-firma Director - Declaración Jurada</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/estilos.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/botones.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/firma.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}">
+</head>
+<body>
+    <div class="container cofirma-container">
+        <div class="header cofirma-header">
+            <h1>👨‍⚖️ Co-firma Director-a</h1>
+            <p>Segunda firma - Validez Legal Completa</p>
+        </div>
+        
+        <div class="content">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <div class="info-card">
+                <h3>📄 Declaración Jurada para Co-firma</h3>
+                <div class="info-row">
+                    <span class="info-label">Agente:</span>
+                    <span class="info-value">{{ ddjj.apellido }}, {{ ddjj.nombre }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Legajo:</span>
+                    <span class="info-value">{{ ddjj.legajo_id }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Año:</span>
+                    <span class="info-value">{{ ddjj.anio }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Estado:</span>
+                    <span class="info-value">
+                        {% if ddjj.estado == 'FIRMADA_AGENTE' %}
+                            <span class="badge badge-success">✅ Firmada por Agente</span>
+                            <span class="badge badge-warning">⏳ Pendiente Co-firma</span>
+                        {% else %}
+                            <span class="badge badge-warning">{{ ddjj.estado }}</span>
+                        {% endif %}
+                    </span>
+                </div>
+                {% if ddjj.codigo_validacion %}
+                <div class="info-row">
+                    <span class="info-label">Código Validación:</span>
+                    <span class="info-value"><code>{{ ddjj.codigo_validacion }}</code></span>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="signature-area">
+                <p><strong>🔏 Firma del Agente:</strong> ✓ Registrada</p>
+                <p><strong>👨‍⚖️ Co-firma del Director-a:</strong> Pendiente</p>
+            </div>
+            
+            <div class="warning-box">
+                <strong>⚠️ ATENCIÓN:</strong> Al co-firmar, usted certifica que la documentación está completa
+                y que el agente ha firmado previamente.
+            </div>
+            
+            <div class="info-box">
+                <strong>🔧 MODO PRUEBA:</strong> Para co-firmar, ingrese el PIN <code>4321</code>
+            </div>
+            
+            <div class="signature-area">
+                <h3>👨‍⚖️ Co-firma Digital</h3>
+                <form method="POST" class="form-cofirma">
+                    <div class="pin-input">
+                        <label for="pin">PIN de Director:</label>
+                        <input type="password" name="pin" id="pin" 
+                               placeholder="4321" maxlength="6" 
+                               required autofocus class="pin-field">
+                        <input type="hidden" name="pin_esperado" value="4321">
+                    </div>
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" required>
+                            Certifico que he revisado la documentación y que la DDJJ cumple con los requisitos.
+                        </label>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">👨‍⚖️ Co-firmar Digitalmente</button>
+                        <a href="{{ url_for('listar_ddjj') }}" class="btn btn-secondary">Volver al Listado</a>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="legal-info">
+                <strong>📌 Consecuencias de la co-firma:</strong>
+                <ul>
+                    <li>La DDJJ queda con doble firma digital (Agente + Director)</li>
+                    <li>El documento adquiere validez legal plena</li>
+                    <li>Se registrará en el libro de auditoría</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Honorable Concejo Deliberante de Posadas - Dirección de Personal</p>
+            <p>Firma Digital PKI - Doble Firma con Validez Legal</p>
+        </div>
+    </div>
+</body>
+</html>

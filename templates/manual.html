@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Manual del Sistema - RRHH DIGITAL</title>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Estilos del sistema -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/estilos.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/panel.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/manual.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/botones.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}">
+</head>
+<body>
+    <div class="sistema-wrapper">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <i class="fas fa-building fa-2x"></i>
+                <h3>RRHH DIGITAL</h3>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="{{ url_for('panel') }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                <li><a href="{{ url_for('listar_legajos') }}"><i class="fas fa-folder"></i> Legajos</a></li>
+                <li><a href="{{ url_for('ver_auditoria') }}"><i class="fas fa-history"></i> Auditoría</a></li>
+                <li><a href="{{ url_for('ver_manual') }}" class="active"><i class="fas fa-book"></i> Manual</a></li>
+                <li><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Salir</a></li>
+            </ul>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="top-bar">
+                <h2><i class="fas fa-book"></i> Manual del Usuario</h2>
+                <div class="user-info">
+                    <i class="fas fa-user-circle"></i>
+                    <span>{{ session.usuario }} ({{ session.rol }})</span>
+                </div>
+            </div>
+            
+            <!-- Contenido del manual -->
+            <div class="manual-container m-4">
+                <!-- Índice -->
+                <div class="manual-indice">
+                    <h3>Contenido</h3>
+                    <ul>
+                        <li><a href="#introduccion">1. Introducción</a></li>
+                        <li><a href="#acceso">2. Acceso al Sistema</a></li>
+                        <li><a href="#legajos">3. Gestión de Legajos</a>
+                            <ul>
+                                <li><a href="#crear-legajo">3.1 Crear Legajo</a></li>
+                                <li><a href="#ver-legajo">3.2 Ver Legajo</a></li>
+                                <li><a href="#documentos">3.3 Documentos Obligatorios</a></li>
+                            </ul>
+                        </li>
+                        <li><a href="#ddjj">4. Declaraciones Juradas</a>
+                            <ul>
+                                <li><a href="#nueva-ddjj">4.1 Nueva DDJJ</a></li>
+                                <li><a href="#editar-ddjj">4.2 Completar DDJJ</a></li>
+                                <li><a href="#finalizar-ddjj">4.3 Finalizar y Validar</a></li>
+                            </ul>
+                        </li>
+                        <li><a href="#auditoria">5. Auditoría</a></li>
+                        <li><a href="#seguridad">6. Seguridad y Backup</a></li>
+                        <li><a href="#preguntas">7. Preguntas Frecuentes</a></li>
+                    </ul>
+                </div>
+                
+                <!-- Contenido -->
+                <div class="manual-contenido">
+                    <section id="introduccion" class="manual-section">
+                        <h2>1. Introducción</h2>
+                        <div class="manual-card">
+                            <p>Bienvenido al <strong>Sistema de Gestión de Legajos RRHH DIGITAL</strong> del Honorable Concejo Deliberante de Posadas.</p>
+                            <p>Este sistema permite la gestión integral de los legajos del personal, incluyendo:</p>
+                            <ul>
+                                <li>Alta y modificación de legajos</li>
+                                <li>Gestión de documentos obligatorios</li>
+                                <li>Generación de Declaraciones Juradas anuales</li>
+                                <li>Auditoría completa de todas las acciones</li>
+                                <li>Backup automático y seguridad</li>
+                            </ul>
+                            <div class="manual-nota">
+                                <i class="fas fa-info-circle"></i>
+                                <strong>Versión:</strong> 2.0 Profesional - Marzo 2026
+                            </div>
+                        </div>
+                    </section>
+                    
+                    <section id="acceso" class="manual-section">
+                        <h2>2. Acceso al Sistema</h2>
+                        <div class="manual-card">
+                            <h3>Credenciales por defecto:</h3>
+                            <table class="table">
+                                <tr>
+                                    <th>Usuario</th>
+                                    <th>Contraseña</th>
+                                    <th>Rol</th>
+                                    <th>Permisos</th>
+                                </tr>
+                                <tr>
+                                    <td><code>admin</code></td>
+                                    <td><code>Admin2026!</code></td>
+                                    <td><span class="badge badge-danger">ADMIN</span></td>
+                                    <td>Acceso total</td>
+                                </tr>
+                                <tr>
+                                    <td><code>rrhh</code></td>
+                                    <td><code>Rrhh2026!</code></td>
+                                    <td><span class="badge badge-primary">RRHH</span></td>
+                                    <td>Gestión de legajos y DDJJ</td>
+                                </tr>
+                                <tr>
+                                    <td><code>consulta</code></td>
+                                    <td><code>Consulta2026!</code></td>
+                                    <td><span class="badge badge-secondary">CONSULTA</span></td>
+                                    <td>Solo visualización</td>
+                                </tr>
+                            </table>
+                            
+                            <div class="manual-advertencia">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <strong>Importante:</strong> Cambie las contraseñas por defecto en el primer acceso.
+                            </div>
+                        </div>
+                    </section>
+                    
+                    <section id="legajos" class="manual-section">
+                        <h2>3. Gestión de Legajos</h2>
+                        
+                        <div class="manual-card" id="crear-legajo">
+                            <h3>3.1 Crear Nuevo Legajo</h3>
+                            <ol>
+                                <li>Desde el panel principal, haga clic en "Nuevo Legajo"</li>
+                                <li>Complete los datos personales del agente</li>
+                                <li>Complete los datos laborales</li>
+                                <li>Haga clic en "Guardar Legajo"</li>
+                            </ol>
+                            <p>El sistema creará automáticamente la carpeta del agente y registrará la acción en auditoría.</p>
+                        </div>
+                        
+                        <div class="manual-card" id="ver-legajo">
+                            <h3>3.2 Ver Detalle del Legajo</h3>
+                            <p>Al ingresar a un legajo, encontrará:</p>
+                            <ul>
+                                <li><strong>Información personal:</strong> Datos del agente</li>
+                                <li><strong>Progreso:</strong> Barra de avance de documentos</li>
+                                <li><strong>Documentos obligatorios:</strong> Organizados por categoría</li>
+                                <li><strong>DDJJ:</strong> Historial de declaraciones juradas</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="manual-card" id="documentos">
+                            <h3>3.3 Documentos Obligatorios</h3>
+                            <p>El sistema gestiona automáticamente los siguientes documentos:</p>
+                            
+                            <div class="grid grid-2 gap-3">
+                                <div>
+                                    <h4>Identidad:</h4>
+                                    <ul>
+                                        <li>DNI Frente y Dorso</li>
+                                        <li>Partida de Nacimiento</li>
+                                        <li>CUIL</li>
+                                        <li>Foto 4x4</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h4>Familia:</h4>
+                                    <ul>
+                                        <li>Partida de Matrimonio</li>
+                                        <li>Partidas de Nacimiento de hijos</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h4>Educación:</h4>
+                                    <ul>
+                                        <li>Título Secundario</li>
+                                        <li>Título Terciario/Universitario</li>
+                                        <li>Certificado Analítico</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h4>Laboral:</h4>
+                                    <ul>
+                                        <li>Contrato/Decreto</li>
+                                        <li>Seguro de Vida</li>
+                                        <li>Certificado de Servicios</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            
+                            <div class="manual-nota">
+                                <i class="fas fa-check-circle text-success"></i>
+                                Los documentos marcados con * son obligatorios para generar la DDJJ.
+                            </div>
+                        </div>
+                    </section>
+                    
+                    <section id="ddjj" class="manual-section">
+                        <h2>4. Declaraciones Juradas</h2>
+                        
+                        <div class="manual-card" id="nueva-ddjj">
+                            <h3>4.1 Nueva Declaración Jurada</h3>
+                            <p>Requisitos previos:</p>
+                            <ul>
+                                <li>Todos los documentos obligatorios deben estar cargados</li>
+                                <li>El legajo debe estar en estado "Activo"</li>
+                            </ul>
+                            <p>Para generar una nueva DDJJ:</p>
+                            <ol>
+                                <li>Ir al detalle del legajo</li>
+                                <li>Hacer clic en "Nueva DDJJ"</li>
+                                <li>Completar el formulario con los datos actualizados</li>
+                                <li>El sistema generará automáticamente el PDF con código QR</li>
+                            </ol>
+                        </div>
+                        
+                        <div class="manual-card" id="finalizar-ddjj">
+                            <h3>4.2 Validación de DDJJ</h3>
+                            <p>Cada DDJJ generada incluye:</p>
+                            <ul>
+                                <li><strong>Código de validación único</strong> de 16 caracteres</li>
+                                <li><strong>Código QR</strong> para verificación rápida</li>
+                                <li><strong>Hash SHA256</strong> para integridad documental</li>
+                                <li><strong>Sello digital</strong> del organismo</li>
+                            </ul>
+                            <p>Para validar una DDJJ:</p>
+                            <ol>
+                                <li>Escanee el código QR con cualquier lector</li>
+                                <li>O ingrese a: <code>http://sistema/validar/CODIGO</code></li>
+                                <li>El sistema mostrará los datos de la DDJJ y su estado</li>
+                            </ol>
+                        </div>
+                    </section>
+                    
+                    <section id="auditoria" class="manual-section">
+                        <h2>5. Auditoría</h2>
+                        <div class="manual-card">
+                            <p>El sistema registra automáticamente todas las acciones:</p>
+                            <ul>
+                                <li>Accesos al sistema (login/logout)</li>
+                                <li>Creación/modificación de legajos</li>
+                                <li>Subida de documentos</li>
+                                <li>Generación de DDJJ</li>
+                                <li>Intentos fallidos de acceso</li>
+                            </ul>
+                            <p>Los registros incluyen:</p>
+                            <ul>
+                                <li>Usuario y rol</li>
+                                <li>Fecha y hora exacta</li>
+                                <li>Dirección IP</li>
+                                <li>Detalle de la acción</li>
+                                <li>Hash de documentos (cuando corresponde)</li>
+                            </ul>
+                        </div>
+                    </section>
+                    
+                    <section id="seguridad" class="manual-section">
+                        <h2>6. Seguridad y Backup</h2>
+                        <div class="manual-card">
+                            <h3>Backup Automático</h3>
+                            <ul>
+                                <li>Backup diario a las 23:00 hs</li>
+                                <li>Backup manual disponible para administradores</li>
+                                <li>Retención de 30 días</li>
+                                <li>Hash de verificación para integridad</li>
+                            </ul>
+                            
+                            <h3 class="mt-4">Seguridad</h3>
+                            <ul>
+                                <li>Contraseñas hasheadas con bcrypt</li>
+                                <li>Bloqueo por 5 intentos fallidos</li>
+                                <li>Sesión segura con timeout de 8 horas</li>
+                                <li>HTTPS requerido en producción</li>
+                                <li>Auditoría de accesos</li>
+                            </ul>
+                        </div>
+                    </section>
+                    
+                    <section id="preguntas" class="manual-section">
+                        <h2>7. Preguntas Frecuentes</h2>
+                        <div class="manual-card">
+                            <details>
+                                <summary>¿Qué hago si olvidé mi contraseña?</summary>
+                                <p>Contacte al administrador del sistema para resetear su contraseña.</p>
+                            </details>
+                            
+                            <details>
+                                <summary>¿Puedo subir varios documentos a la vez?</summary>
+                                <p>Actualmente se deben subir uno por uno para mantener el control de versiones.</p>
+                            </details>
+                            
+                            <details>
+                                <summary>¿Los documentos se convierten automáticamente a PDF?</summary>
+                                <p>Sí, el sistema convierte automáticamente imágenes y documentos de Word a PDF.</p>
+                            </details>
+                            
+                            <details>
+                                <summary>¿Cómo sé si un legajo está completo?</summary>
+                                <p>El sistema muestra una barra de progreso y el estado de cada documento obligatorio.</p>
+                            </details>
+                            
+                            <details>
+                                <summary>¿Puedo modificar una DDJJ ya finalizada?</summary>
+                                <p>No, las DDJJ finalizadas son inmodificables. Debe generar una nueva versión.</p>
+                            </details>
+                        </div>
+                    </section>
+                    
+                    <div class="manual-footer">
+                        <p>© 2026 RRHH DIGITAL - Honorable Concejo Deliberante de Posadas</p>
+                            <a href="https://www.linkedin.com/in/mirian-yolanda-gonzalez/" target="_blank">
+                                Mirian Yolanda Gonzalez
+                            </a>
+                        <p>Última actualización: Marzo 2026</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Botón para imprimir manual -->
+    <button class="btn-float" onclick="window.print()">
+        <i class="fas fa-print"></i>
+        <span class="tooltip">Imprimir manual</span>
+    </button>
+</body>
+</html>

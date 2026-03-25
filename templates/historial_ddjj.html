@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Historial de DDJJ - RRHH DIGITAL</title>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Estilos del sistema -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/estilos.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/panel.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/ddjj.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tabla.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/botones.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}">
+</head>
+<body>
+    <div class="sistema-wrapper">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <i class="fas fa-building fa-2x"></i>
+                <h3>RRHH DIGITAL</h3>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="{{ url_for('panel') }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                <li><a href="{{ url_for('listar_legajos') }}"><i class="fas fa-folder"></i> Legajos</a></li>
+                <li><a href="{{ url_for('ver_auditoria') }}"><i class="fas fa-history"></i> Auditoría</a></li>
+                <li><a href="{{ url_for('ver_manual') }}"><i class="fas fa-book"></i> Manual</a></li>
+                <li><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Salir</a></li>
+            </ul>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="top-bar">
+                <h2><i class="fas fa-history"></i> Historial de Declaraciones Juradas</h2>
+                <div class="user-info">
+                    <i class="fas fa-user-circle"></i>
+                    <span>{{ session.usuario }} ({{ session.rol }})</span>
+                </div>
+            </div>
+            
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash-message {{ category }} m-4">
+                            <i class="fas fa-{% if category == 'error' %}exclamation-circle{% else %}check-circle{% endif %}"></i>
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <!-- Información del Agente -->
+            <div class="card m-4">
+                <div class="card-body">
+                    <div class="flex justify-between align-center">
+                        <div>
+                            <h3>{{ legajo.apellido }}, {{ legajo.nombre }}</h3>
+                            <p class="text-muted">
+                                <i class="fas fa-hashtag"></i> Legajo: {{ legajo.legajo_id }} | 
+                                <i class="fas fa-id-card"></i> DNI: {{ legajo.dni }}
+                            </p>
+                        </div>
+                        <a href="{{ url_for('ver_legajo', legajo_id=legajo.legajo_id) }}" class="btn btn-light">
+                            <i class="fas fa-arrow-left"></i> Volver al Legajo
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Resumen de DDJJ -->
+            <div class="stats-grid m-4">
+                <div class="stat-item">
+                    <div class="stat-value">{{ declaraciones|length }}</div>
+                    <div class="stat-label">Total DDJJ</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">
+                        {% set finalizadas = declaraciones|selectattr('estado', 'equalto', 'FINALIZADA')|list|length %}
+                        {{ finalizadas }}
+                    </div>
+                    <div class="stat-label">Finalizadas</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">
+                        {% set borradores = declaraciones|selectattr('estado', 'equalto', 'BORRADOR')|list|length %}
+                        {{ borradores }}
+                    </div>
+                    <div class="stat-label">Borradores</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">{{ now().year }}</div>
+                    <div class="stat-label">Año Actual</div>
+                </div>
+            </div>
+            
+            <!-- Tabla de DDJJ -->
+            <div class="table-container m-4">
+                <div class="table-search">
+                    <h3><i class="fas fa-file-pdf"></i> Declaraciones Juradas por Año</h3>
+                    <a href="{{ url_for('nueva_ddjj', legajo_id=legajo.legajo_id) }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Nueva DDJJ {{ now().year }}
+                    </a>
+                </div>
+                
+                <table class="table" id="tablaDDJJ">
+                    <thead>
+                        <tr>
+                            <th>Año</th>
+                            <th>Versión</th>
+                            <th>Estado</th>
+                            <th>Fecha Generación</th>
+                            <th>Fecha Envío</th>
+                            <th>Código Validación</th>
+                            <th>Hash</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ddjj in declaraciones %}
+                        <tr>
+                            <td><strong>{{ ddjj.anio }}</strong></td>
+                            <td>v{{ ddjj.version }}</td>
+                            <td>
+                                <span class="estado-badge {% if ddjj.estado == 'FINALIZADA' %}estado-activo{% elif ddjj.estado == 'BORRADOR' %}estado-borrador{% else %}estado-licencia{% endif %}">
+                                    {{ ddjj.estado }}
+                                </span>
+                            </td>
+                            <td>{{ ddjj.fecha_generacion[:10] if ddjj.fecha_generacion else '-' }}</td>
+                            <td>{{ ddjj.fecha_envio[:10] if ddjj.fecha_envio else '-' }}</td>
+                            <td>
+                                {% if ddjj.codigo_validacion %}
+                                <code class="codigo">{{ ddjj.codigo_validacion[:8] }}...</code>
+                                <button class="btn btn-sm btn-light" onclick="copiarCodigo('{{ ddjj.codigo_validacion }}')" title="Copiar código">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if ddjj.hash_pdf %}
+                                <code class="hash">{{ ddjj.hash_pdf[:8] }}...</code>
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="table-actions">
+                                    {% if ddjj.estado == 'BORRADOR' %}
+                                        <a href="{{ url_for('editar_ddjj', ddjj_id=ddjj.id) }}" class="btn btn-sm btn-primary" title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                    {% else %}
+                                        <a href="{{ url_for('ver_ddjj', ddjj_id=ddjj.id) }}" class="btn btn-sm btn-success" target="_blank" title="Ver PDF">
+                                            <i class="fas fa-file-pdf"></i>
+                                        </a>
+                                        <button class="btn btn-sm btn-info" onclick="verQR('{{ ddjj.codigo_validacion }}')" title="Ver QR">
+                                            <i class="fas fa-qrcode"></i>
+                                        </button>
+                                    {% endif %}
+                                    <button class="btn btn-sm btn-light" onclick="verDetalle('{{ ddjj.id }}')" title="Ver detalles">
+                                        <i class="fas fa-info-circle"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center p-5">
+                                <i class="fas fa-file-pdf fa-3x text-muted mb-3"></i>
+                                <p>No hay Declaraciones Juradas para este agente</p>
+                                <a href="{{ url_for('nueva_ddjj', legajo_id=legajo.legajo_id) }}" class="btn btn-primary">
+                                    Crear Primera DDJJ
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Línea de tiempo de DDJJ -->
+            <div class="card m-4">
+                <div class="card-header">
+                    <h3><i class="fas fa-chart-line"></i> Línea de Tiempo</h3>
+                </div>
+                <div class="card-body">
+                    <div class="documentos-timeline">
+                        {% for ddjj in declaraciones|sort(attribute='anio', reverse=true) %}
+                        <div class="timeline-item {% if ddjj.estado == 'FINALIZADA' %}completo{% endif %}">
+                            <div class="timeline-date">{{ ddjj.anio }}</div>
+                            <div class="timeline-title">
+                                <i class="fas fa-file-pdf"></i>
+                                Declaración Jurada {{ ddjj.anio }} - Versión {{ ddjj.version }}
+                            </div>
+                            <div class="timeline-desc">
+                                Estado: {{ ddjj.estado }} | 
+                                Generada: {{ ddjj.fecha_generacion[:10] if ddjj.fecha_generacion else 'Pendiente' }}
+                                {% if ddjj.fecha_envio %} | Enviada: {{ ddjj.fecha_envio[:10] }}{% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal para ver QR -->
+    <div id="modalQR" class="modal-overlay" style="display: none;">
+        <div class="modal-container" style="max-width: 400px;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3><i class="fas fa-qrcode"></i> Código QR de Validación</h3>
+                    <button class="close-modal" onclick="cerrarModalQR()">&times;</button>
+                </div>
+                <div class="modal-body text-center">
+                    <div id="qrContainer" class="qr-container p-4">
+                        <!-- El QR se carga dinámicamente -->
+                    </div>
+                    <p id="qrCodigo" class="mt-3"></p>
+                    <p class="text-muted small">Escanee el código para validar la DDJJ</p>
+                </div>
+                <div class="modal-footer justify-center">
+                    <button class="btn btn-primary" onclick="descargarQR()">
+                        <i class="fas fa-download"></i> Descargar QR
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function copiarCodigo(codigo) {
+            navigator.clipboard.writeText(codigo).then(function() {
+                alert('Código copiado al portapapeles');
+            });
+        }
+        
+        function verQR(codigo) {
+            if (!codigo) {
+                alert('Esta DDJJ no tiene código QR generado');
+                return;
+            }
+            
+            // Mostrar modal
+            document.getElementById('modalQR').style.display = 'block';
+            document.getElementById('qrCodigo').innerText = 'Código: ' + codigo;
+            
+            // Aquí cargarías la imagen QR desde el servidor
+            const qrContainer = document.getElementById('qrContainer');
+            qrContainer.innerHTML = `<img src="{{ url_for('static', filename='qr/') }}${codigo}.png" alt="QR" style="max-width: 200px;">`;
+        }
+        
+        function cerrarModalQR() {
+            document.getElementById('modalQR').style.display = 'none';
+        }
+        
+        function descargarQR() {
+            // Implementar descarga de QR
+            alert('Función de descarga de QR - Implementar');
+        }
+        
+        function verDetalle(ddjjId) {
+            // Aquí podrías mostrar un modal con más detalles
+            window.location.href = "{{ url_for('ver_ddjj', ddjj_id=0) }}".replace('0', ddjjId);
+        }
+    </script>
+</body>
+</html>

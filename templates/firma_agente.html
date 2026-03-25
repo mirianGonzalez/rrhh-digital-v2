@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Firma Digital - Agente</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/estilos.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/botones.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/firma.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}">
+</head>
+<body>
+    <div class="container firma-container">
+        <div class="header firma-header">
+            <h1>🔐 Firma Digital</h1>
+            <p>Declaración Jurada - Agente</p>
+        </div>
+        
+        <div class="content">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <div class="info-card">
+                <h3>📄 Declaración Jurada {{ ddjj.anio }}</h3>
+                <div class="info-row">
+                    <span class="info-label">Agente:</span>
+                    <span class="info-value">{{ ddjj.apellido }}, {{ ddjj.nombre }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Legajo:</span>
+                    <span class="info-value">{{ ddjj.legajo_id }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Año:</span>
+                    <span class="info-value">{{ ddjj.anio }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Estado:</span>
+                    <span class="info-value">
+                        <span class="badge badge-warning">{{ ddjj.estado }}</span>
+                    </span>
+                </div>
+            </div>
+            
+            <div class="info-box">
+                <strong>🔧 MODO PRUEBA:</strong> Para firmar, ingrese el PIN <code>1234</code>
+            </div>
+            
+            <div class="signature-area">
+                <h3>🔏 Firma Digital</h3>
+                <form method="POST" class="form-firma">
+                    <div class="pin-input">
+                        <label for="pin">PIN de Firma:</label>
+                        <input type="password" name="pin" id="pin" 
+                               placeholder="1234" maxlength="6" 
+                               required autofocus class="pin-field">
+                        <input type="hidden" name="pin_esperado" value="1234">
+                    </div>
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" required>
+                            Declaro bajo juramento que los datos son verdaderos y correctos.
+                        </label>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-success">✅ Firmar Digitalmente</button>
+                        <a href="{{ url_for('ver_legajo', legajo_id=ddjj.legajo_id) }}" class="btn btn-secondary">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="legal-info">
+                <p><strong>⚠️ Aviso Legal:</strong> La firma digital tiene la misma validez que la firma ológrafa.</p>
+                <p>Esta acción quedará registrada en el libro de auditoría del sistema.</p>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Honorable Concejo Deliberante de Posadas - Dirección de Personal</p>
+        </div>
+    </div>
+</body>
+</html>

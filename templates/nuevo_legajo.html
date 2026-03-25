@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Nuevo Legajo - RRHH DIGITAL</title>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Estilos del sistema -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/estilos.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/panel.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/legajo.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/botones.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}">
+</head>
+<body>
+    <div class="sistema-wrapper">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <i class="fas fa-building fa-2x"></i>
+                <h3>RRHH DIGITAL</h3>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="{{ url_for('panel') }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                <li><a href="{{ url_for('listar_legajos') }}" class="active"><i class="fas fa-folder"></i> Legajos</a></li>
+                <li><a href="{{ url_for('ver_auditoria') }}"><i class="fas fa-history"></i> Auditoría</a></li>
+                <li><a href="{{ url_for('ver_manual') }}"><i class="fas fa-book"></i> Manual</a></li>
+                <li><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Salir</a></li>
+            </ul>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="top-bar">
+                <h2><i class="fas fa-user-plus"></i> Nuevo Legajo</h2>
+                <div class="user-info">
+                    <i class="fas fa-user-circle"></i>
+                    <span>{{ session.usuario }} ({{ session.rol }})</span>
+                </div>
+            </div>
+            
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash-message {{ category }} m-4">
+                            <i class="fas fa-{% if category == 'error' %}exclamation-circle{% else %}check-circle{% endif %}"></i>
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <!-- Formulario -->
+            <div class="card m-4">
+                <div class="card-header">
+                    <h3><i class="fas fa-id-card"></i> Datos Personales</h3>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('crear_legajo') }}" id="formLegajo">
+                        <div class="grid grid-2 gap-4">
+                            <!-- Legajo ID -->
+                            <div class="form-group">
+                                <label for="legajo_id">
+                                    <i class="fas fa-hashtag"></i> N° Legajo *
+                                </label>
+                                <input type="text" id="legajo_id" name="legajo_id" required 
+                                       placeholder="Ej: 10001" class="form-control">
+                                <small class="text-muted">Único, no modificable</small>
+                            </div>
+                            
+                            <!-- DNI -->
+                            <div class="form-group">
+                                <label for="dni">
+                                    <i class="fas fa-id-card"></i> DNI *
+                                </label>
+                                <input type="text" id="dni" name="dni" required 
+                                       placeholder="Sin puntos" class="form-control">
+                            </div>
+                            
+                            <!-- Apellido -->
+                            <div class="form-group">
+                                <label for="apellido">
+                                    <i class="fas fa-user"></i> Apellido *
+                                </label>
+                                <input type="text" id="apellido" name="apellido" required 
+                                       class="form-control" placeholder="Ej: GARCIA">
+                            </div>
+                            
+                            <!-- Nombre -->
+                            <div class="form-group">
+                                <label for="nombre">
+                                    <i class="fas fa-user"></i> Nombre *
+                                </label>
+                                <input type="text" id="nombre" name="nombre" required 
+                                       class="form-control" placeholder="Ej: Juan">
+                            </div>
+                            
+                            <!-- Email -->
+                            <div class="form-group">
+                                <label for="email">
+                                    <i class="fas fa-envelope"></i> Email
+                                </label>
+                                <input type="email" id="email" name="email" 
+                                       class="form-control" placeholder="ejemplo@mail.com">
+                            </div>
+                            
+                            <!-- Teléfono -->
+                            <div class="form-group">
+                                <label for="telefono">
+                                    <i class="fas fa-phone"></i> Teléfono
+                                </label>
+                                <input type="text" id="telefono" name="telefono" 
+                                       class="form-control" placeholder="3764123456">
+                            </div>
+                            
+                            <!-- Fecha Nacimiento -->
+                            <div class="form-group">
+                                <label for="fecha_nacimiento">
+                                    <i class="fas fa-calendar"></i> Fecha Nacimiento
+                                </label>
+                                <input type="date" id="fecha_nacimiento" name="fecha_nacimiento" 
+                                       class="form-control">
+                            </div>
+                            
+                            <!-- Estado Civil -->
+                            <div class="form-group">
+                                <label for="estado_civil">
+                                    <i class="fas fa-heart"></i> Estado Civil
+                                </label>
+                                <select id="estado_civil" name="estado_civil" class="form-control">
+                                    <option value="">Seleccionar...</option>
+                                    <option value="Soltero">Soltero/a</option>
+                                    <option value="Casado">Casado/a</option>
+                                    <option value="Divorciado">Divorciado/a</option>
+                                    <option value="Viudo">Viudo/a</option>
+                                    <option value="Conviviente">Conviviente</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <h3 class="mt-5"><i class="fas fa-briefcase"></i> Datos Laborales</h3>
+                        
+                        <div class="grid grid-2 gap-4 mt-3">
+                            <!-- Cargo -->
+                            <div class="form-group">
+                                <label for="cargo">
+                                    <i class="fas fa-briefcase"></i> Cargo
+                                </label>
+                                <input type="text" id="cargo" name="cargo" 
+                                       class="form-control" placeholder="Ej: Administrativo">
+                            </div>
+                            
+                            <!-- Tipo Personal -->
+                            <div class="form-group">
+                                <label for="tipo_personal">
+                                    <i class="fas fa-tag"></i> Tipo Personal
+                                </label>
+                                <select id="tipo_personal" name="tipo_personal" class="form-control">
+                                    <option value="">Seleccionar...</option>
+                                    <option value="Planta Permanente">Planta Permanente</option>
+                                    <option value="Contratado">Contratado</option>
+                                    <option value="Temporario">Temporario</option>
+                                    <option value="Nominado">Nominado</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Fecha Ingreso -->
+                            <div class="form-group">
+                                <label for="fecha_ingreso">
+                                    <i class="fas fa-calendar-alt"></i> Fecha Ingreso
+                                </label>
+                                <input type="date" id="fecha_ingreso" name="fecha_ingreso" 
+                                       class="form-control">
+                            </div>
+                            
+                            <!-- Estado -->
+                            <div class="form-group">
+                                <label for="estado">
+                                    <i class="fas fa-circle"></i> Estado
+                                </label>
+                                <select id="estado" name="estado" class="form-control">
+                                    <option value="Activo">Activo</option>
+                                    <option value="Inactivo">Inactivo</option>
+                                    <option value="Licencia">Licencia</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-end gap-3 mt-5">
+                            <a href="{{ url_for('listar_legajos') }}" class="btn btn-light">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Guardar Legajo
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Ayuda -->
+            <div class="card m-4 bg-light">
+                <div class="card-body">
+                    <div class="flex gap-3 align-center">
+                        <i class="fas fa-info-circle fa-2x text-info"></i>
+                        <div>
+                            <h4>Instrucciones:</h4>
+                            <p class="mb-0">Los campos marcados con * son obligatorios. El número de legajo debe ser único en el sistema.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="{{ url_for('static', filename='js/nuevo_legajo.js') }}"></script>
+</body>
+</html>

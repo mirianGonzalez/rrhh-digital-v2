@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Detalle del Legajo - RRHH DIGITAL</title>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Estilos del sistema -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/estilos.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/panel.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/documentos.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/botones.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tabla.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/modal.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/legajo.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}">
+</head>
+<body>
+    <div class="sistema-wrapper">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <i class="fas fa-building fa-2x"></i>
+                <h3>LEGAJOS DIGITAL</h3>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="{{ url_for('panel') }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                <li><a href="{{ url_for('listar_legajos') }}" class="active"><i class="fas fa-folder"></i> Legajos</a></li>
+                <li><a href="{{ url_for('ver_auditoria') }}"><i class="fas fa-history"></i> Auditoría</a></li>
+                <li><a href="{{ url_for('ver_manual') }}"><i class="fas fa-book"></i> Manual</a></li>
+                <li><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Salir</a></li>
+            </ul>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="top-bar">
+                <h2><i class="fas fa-folder-open"></i> Legajo N° {{ legajo.legajo_id }}</h2>
+                <div class="user-info">
+                    <i class="fas fa-user-circle"></i>
+                    <span>{{ session.usuario }} ({{ session.rol }})</span>
+                    <a href="{{ url_for('cambiar_password') }}" class="btn btn-sm btn-light" title="Cambiar contraseña">
+                        <i class="fas fa-key"></i>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash-message {{ category }} m-4">
+                            <i class="fas fa-{% if category == 'error' %}exclamation-circle{% else %}check-circle{% endif %}"></i>
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <!-- Información del Agente -->
+            <div class="card m-4">
+                <div class="card-body">
+                    <div class="flex justify-between align-center">
+                        <div>
+                            <h3><i class="fas fa-user"></i> {{ legajo.apellido }}, {{ legajo.nombre }}</h3>
+                            <p class="text-muted">
+                                <i class="fas fa-id-card"></i> DNI: {{ legajo.dni or 'No registrado' }} | 
+                                <i class="fas fa-phone"></i> {{ legajo.telefono or 'Sin teléfono' }} |
+                                <i class="fas fa-envelope"></i> {{ legajo.email or 'Sin email' }}
+                            </p>
+                        </div>
+                        <div class="flex gap-2">
+                            <span class="estado-badge estado-{{ legajo.estado|lower }}">
+                                {{ legajo.estado }}
+                            </span>
+                            <!-- BOTÓN EDITAR AGREGADO AQUÍ -->
+                            <a href="{{ url_for('editar_legajo', legajo_id=legajo.legajo_id) }}" class="btn btn-warning" title="Editar datos del legajo">
+                                <i class="fas fa-edit"></i> Editar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Progreso y Botón DDJJ -->
+            <div class="card m-4">
+                <div class="card-body">
+                    <div class="flex justify-between align-center">
+                        <div style="flex: 1;">
+                            <h4><i class="fas fa-chart-line"></i> Progreso del Legajo</h4>
+                            <div class="progreso-barra" style="margin: 10px 0;">
+                                <div class="progreso-llenado" style="width: {{ progreso_documentos }}%;"></div>
+                            </div>
+                            <span><strong>{{ completados }}/{{ total_requeridos }}</strong> documentos obligatorios completados</span>
+                        </div>
+                        <div style="margin-left: 20px;">
+                            {% if completados >= total_requeridos %}
+                                <a href="{{ url_for('nueva_ddjj', legajo_id=legajo.legajo_id) }}" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-file-pdf"></i> Nueva DDJJ {{ now().year }}
+                                </a>
+                            {% else %}
+                                <button class="btn btn-light btn-lg" disabled title="Complete todos los documentos obligatorios primero">
+                                    <i class="fas fa-lock"></i> Complete documentos
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Documentos Obligatorios por Categoría -->
+            <div class="documentos-section m-4">
+                {% for categoria, titulo in categorias.items() %}
+                    {% set docs_categoria = documentos_obligatorios|selectattr('categoria', 'equalto', categoria)|list %}
+                    {% if docs_categoria %}
+                        <div class="categoria-documentos">
+                            <div class="categoria-titulo">
+                                <i class="fas fa-folder"></i> {{ titulo }}
+                                <span class="badge">{{ docs_categoria|length }}</span>
+                            </div>
+                            <div class="documentos-grid">
+                                {% for doc in docs_categoria %}
+                                    {% set tipo = doc.id.upper() %}
+                                    {% set docs_existentes = documentos_por_tipo.get(tipo, []) %}
+                                    {% set completo = docs_existentes|length > 0 %}
+                                    
+                                    <div class="documento-card {{ 'completo' if completo else 'pendiente' }} {{ 'obligatorio' if doc.requerido }}">
+                                        <div class="documento-header">
+                                            <span class="documento-titulo">
+                                                <i class="fas fa-file-pdf"></i>
+                                                {{ doc.nombre }}
+                                                {% if doc.requerido %}
+                                                    <span class="text-danger">*</span>
+                                                {% endif %}
+                                            </span>
+                                            <span class="documento-estado-badge badge-{{ 'completo' if completo else 'pendiente' }}">
+                                                {{ 'COMPLETO' if completo else 'PENDIENTE' }}
+                                            </span>
+                                        </div>
+                                        <div class="documento-body">
+                                            {% if completo %}
+                                                {% for doc_existente in docs_existentes %}
+                                                    <div class="documento-info-item">
+                                                        <i class="fas fa-file-pdf"></i>
+                                                        <span>{{ doc_existente.nombre_archivo }}</span>
+                                                    </div>
+                                                    <div class="documento-info-item">
+                                                        <i class="fas fa-calendar"></i>
+                                                        <span>Subido: {{ doc_existente.fecha_subida[:10] }}</span>
+                                                    </div>
+                                                    <div class="documento-info-item">
+                                                        <i class="fas fa-user"></i>
+                                                        <span>Por: {{ doc_existente.subido_por }}</span>
+                                                    </div>
+                                                    <div class="documento-info-item">
+                                                        <i class="fas fa-hashtag"></i>
+                                                        <span class="documento-hash">Hash: {{ doc_existente.hash_archivo[:16] }}...</span>
+                                                    </div>
+                                                {% endfor %}
+                                            {% else %}
+                                                <p class="text-warning text-center">
+                                                    <i class="fas fa-exclamation-triangle"></i> 
+                                                    Documento pendiente
+                                                </p>
+                                            {% endif %}
+                                        </div>
+                                        <div class="documento-footer">
+                                            {% if completo %}
+                                                {% for doc_existente in docs_existentes %}
+                                                    <a href="{{ url_for('ver_documento', doc_id=doc_existente.id) }}" 
+                                                       class="btn-documento btn-ver" target="_blank" title="Ver documento">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    <a href="{{ url_for('descargar_documento', doc_id=doc_existente.id) }}" 
+                                                       class="btn-documento btn-descargar" title="Descargar documento">
+                                                        <i class="fas fa-download"></i>
+                                                    </a>
+                                                    <button onclick="imprimirDocumento('{{ url_for('ver_documento', doc_id=doc_existente.id) }}')" 
+                                                            class="btn-documento btn-imprimir" title="Imprimir documento">
+                                                        <i class="fas fa-print"></i>
+                                                    </button>
+                                                    {% if session.rol == 'ADMIN' %}
+                                                    <button onclick="anularDocumento('{{ doc_existente.id }}', '{{ doc.nombre }}')" 
+                                                            class="btn-documento btn-anular" title="Anular documento">
+                                                        <i class="fas fa-ban"></i>
+                                                    </button>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            {% else %}
+                                                <button onclick="mostrarModalSubida('{{ tipo }}', '{{ doc.nombre }}')" 
+                                                        class="btn-documento btn-subir" title="Subir documento">
+                                                    <i class="fas fa-upload"></i> Subir
+                                                </button>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            
+            <!-- Declaraciones Juradas Existentes -->
+            <div class="card m-4">
+                <div class="card-header">
+                    <h3><i class="fas fa-history"></i> Declaraciones Juradas Anteriores</h3>
+                </div>
+                <div class="card-body">
+                    {% if declaraciones %}
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Año</th>
+                                    <th>Versión</th>
+                                    <th>Estado</th>
+                                    <th>Fecha</th>
+                                    <th>Código</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for ddjj in declaraciones %}
+                                <tr>
+                                    <td>{{ ddjj.anio }}</td>
+                                    <td>v{{ ddjj.version }}</td>
+                                    <td>
+                                        <span class="estado-badge {% if ddjj.estado == 'FINALIZADA' %}estado-activo{% else %}estado-borrador{% endif %}">
+                                            {{ ddjj.estado }}
+                                        </span>
+                                    </td>
+                                    <td>{{ ddjj.fecha_generacion[:10] }}</td>
+                                    <td>
+                                        {% if ddjj.codigo_validacion %}
+                                            <code>{{ ddjj.codigo_validacion[:8] }}...</code>
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="table-actions">
+                                            {% if ddjj.estado == 'BORRADOR' %}
+                                                <a href="{{ url_for('editar_ddjj', ddjj_id=ddjj.id) }}" class="btn btn-sm btn-primary" title="Editar DDJJ">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                            {% else %}
+                                                <a href="{{ url_for('ver_ddjj', ddjj_id=ddjj.id) }}" class="btn btn-sm btn-success" target="_blank" title="Ver PDF">
+                                                    <i class="fas fa-file-pdf"></i>
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <p class="text-center text-muted p-4">
+                            <i class="fas fa-file-pdf fa-2x mb-2"></i><br>
+                            No hay Declaraciones Juradas cargadas
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Modal para Subir Documentos -->
+            <div id="modalSubida" class="modal-overlay" style="display: none;">
+                <div class="modal-container">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3><i class="fas fa-upload"></i> <span id="modalTitulo">Subir Documento</span></h3>
+                            <button class="close-modal" onclick="cerrarModal()">&times;</button>
+                        </div>
+                        <form id="formSubida" action="{{ url_for('subir_documento', legajo_id=legajo.legajo_id) }}" method="POST" enctype="multipart/form-data">
+                            <div class="modal-body">
+                                <input type="hidden" name="tipo_documento" id="campoTipo">
+                                
+                                <div class="form-group">
+                                    <label><strong>Tipo de Documento:</strong></label>
+                                    <p id="tipoSeleccionado" class="form-control-static" style="font-weight: bold;"></p>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="archivo"><strong>Seleccionar Archivo:</strong></label>
+                                    <input type="file" name="archivo" id="archivo" required class="form-control">
+                                    <p class="text-muted small mt-1">
+                                        <i class="fas fa-info-circle"></i> 
+                                        Formatos aceptados: PDF, JPG, PNG, DOC, DOCX. Se convertirá automáticamente a PDF.
+                                    </p>
+                                </div>
+                                
+                                <div id="progresoSubida" style="display: none;" class="mt-4">
+                                    <div class="progreso-barra">
+                                        <div class="progreso-llenado" id="barraProgreso" style="width: 0%;"></div>
+                                    </div>
+                                    <p id="estadoSubida" class="text-center mt-2">Subiendo...</p>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" onclick="cerrarModal()" class="btn btn-light">Cancelar</button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-upload"></i> Subir Archivo
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botones para DDJJ -->
+            <div class="card m-4">
+                <div class="card-body">
+                    <h4><i class="fas fa-file-pdf"></i> Acciones de Declaración Jurada</h4>
+                    <div class="btn-group flex gap-3" role="group" style="margin-top: 15px;">
+                        <a href="{{ url_for('nueva_ddjj', legajo_id=legajo.legajo_id) }}" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Nueva DDJJ {{ now().year }}
+                        </a>
+                        <a href="{{ url_for('crear_ddjj_completa_final', legajo_id=legajo.legajo_id) }}" class="btn btn-warning">
+                            <i class="fas fa-magic"></i> Crear DDJJ de Prueba
+                        </a>
+                        <a href="{{ url_for('historial_ddjj', legajo_id=legajo.legajo_id) }}" class="btn btn-info">
+                            <i class="fas fa-history"></i> Ver Historial
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Botones de navegación -->
+            <div class="flex gap-3 m-4">
+                <a href="{{ url_for('listar_legajos') }}" class="btn btn-light">
+                    <i class="fas fa-arrow-left"></i> Volver a Legajos
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='js/legajo.js') }}"></script>
+    <script>
+        // Función para mostrar modal de subida (debe estar definida en legajo.js)
+        function mostrarModalSubida(tipo, nombre) {
+            document.getElementById('campoTipo').value = tipo;
+            document.getElementById('tipoSeleccionado').innerText = nombre;
+            document.getElementById('modalTitulo').innerText = 'Subir ' + nombre;
+            document.getElementById('modalSubida').style.display = 'flex';
+        }
+        
+        function cerrarModal() {
+            document.getElementById('modalSubida').style.display = 'none';
+            document.getElementById('formSubida').reset();
+            document.getElementById('progresoSubida').style.display = 'none';
+        }
+        
+        // Función para imprimir
+        function imprimirDocumento(url) {
+            window.open(url, '_blank').print();
+        }
+        
+        // Función para anular documento
+        function anularDocumento(docId, docNombre) {
+            if (confirm(`¿Está seguro de anular el documento "${docNombre}"?\n\nEsta acción no se puede deshacer.`)) {
+                // Crear formulario para enviar POST
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `/documento/${docId}/anular`;
+                
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'motivo';
+                input.value = 'Anulado por usuario';
+                
+                form.appendChild(input);
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+        
+        // Manejar envío del formulario con progreso
+        document.getElementById('formSubida')?.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const progresoDiv = document.getElementById('progresoSubida');
+            const barra = document.getElementById('barraProgreso');
+            const estado = document.getElementById('estadoSubida');
+            
+            submitBtn.disabled = true;
+            progresoDiv.style.display = 'block';
+            barra.style.width = '0%';
+            estado.innerText = 'Iniciando subida...';
+            
+            fetch(this.action, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                barra.style.width = '100%';
+                if (data.success) {
+                    estado.innerText = '✅ Documento subido correctamente. Recargando...';
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    throw new Error(data.error || 'Error al subir');
+                }
+            })
+            .catch(error => {
+                estado.innerText = '❌ Error: ' + error.message;
+                barra.style.width = '0%';
+                submitBtn.disabled = false;
+                setTimeout(() => {
+                    progresoDiv.style.display = 'none';
+                }, 3000);
+            });
+        });
+        
+        // Cerrar modal con tecla ESC
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                cerrarModal();
+            }
+        });
+    </script>
+</body>
+</html>

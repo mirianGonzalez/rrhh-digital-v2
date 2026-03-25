@@ -1,0 +1,44 @@
+/* static/css/mobile.css */
+@media (max-width: 768px) {
+    /* Ajustar contenedores */
+    .container, .container-fluid {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+    
+    /* Hacer tablas desplazables */
+    .table-responsive {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    /* Aumentar tamaño de botones para dedos */
+    .btn, button, input[type="submit"] {
+        padding: 12px 20px;
+        font-size: 16px;
+        margin: 5px 0;
+    }
+    
+    /* Mejorar inputs para móvil */
+    input, select, textarea {
+        font-size: 16px !important; /* Evita zoom automático en iOS */
+        padding: 10px;
+    }
+    
+    /* Ajustar cards */
+    .card {
+        margin-bottom: 15px;
+    }
+    
+    /* Menú más compacto */
+    .navbar {
+        padding: 8px;
+    }
+    
+    /* Espaciado general */
+    body {
+        padding-top: 60px;
+    }
+}

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Lista de Legajos - RRHH DIGITAL</title>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Estilos del sistema -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/estilos.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/panel.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/legajo.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/botones.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tabla.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}">
+</head>
+<body>
+    <div class="sistema-wrapper">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <i class="fas fa-building fa-2x"></i>
+                <h3>LEGAJOS DIGITAL</h3>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="{{ url_for('panel') }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                <li><a href="{{ url_for('listar_legajos') }}" class="active"><i class="fas fa-folder"></i> Legajos</a></li>
+                <li><a href="{{ url_for('ver_auditoria') }}"><i class="fas fa-history"></i> Auditoría</a></li>
+                <li><a href="{{ url_for('ver_manual') }}"><i class="fas fa-book"></i> Manual</a></li>
+                <li><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Salir</a></li>
+            </ul>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="top-bar">
+                <h2><i class="fas fa-folder"></i> Gestión de Legajos</h2>
+                <div class="user-info">
+                    <i class="fas fa-user-circle"></i>
+                    <span>{{ session.usuario }} ({{ session.rol }})</span>
+                </div>
+            </div>
+            
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash-message {{ category }} m-4">
+                            <i class="fas fa-{% if category == 'error' %}exclamation-circle{% else %}check-circle{% endif %}"></i>
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <!-- Barra de herramientas -->
+            <div class="table-search">
+                <input type="text" id="buscador" placeholder="Buscar por legajo, apellido o nombre...">
+                <a href="{{ url_for('nuevo_legajo') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Nuevo Legajo
+                </a>
+            </div>
+            
+            <!-- Filtros -->
+            <div class="table-filters">
+                <div class="filter-group">
+                    <label>Estado:</label>
+                    <select id="filtroEstado">
+                        <option value="todos">Todos</option>
+                        <option value="Activo">Activos</option>
+                        <option value="Inactivo">Inactivos</option>
+                        <option value="Licencia">Licencia</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Ordenar por:</label>
+                    <select id="ordenarPor">
+                        <option value="legajo">Legajo</option>
+                        <option value="apellido">Apellido</option>
+                        <option value="fecha">Fecha Ingreso</option>
+                    </select>
+                </div>
+                <span class="search-info" id="resultados">Mostrando todos los legajos</span>
+            </div>
+            
+            <!-- Tabla de Legajos -->
+            <div class="table-container m-4">
+                <table class="table table-striped" id="tabla-legajos">
+                    <thead>
+                        <tr>
+                            <th>Legajo</th>
+                            <th>Apellido</th>
+                            <th>Nombre</th>
+                            <th>DNI</th>
+                            <th>Estado</th>
+                            <th>Documentos</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for legajo in legajos %}
+                        <tr class="selectable" data-legajo="{{ legajo.legajo_id }}" 
+                            data-apellido="{{ legajo.apellido }}" 
+                            data-nombre="{{ legajo.nombre }}"
+                            data-estado="{{ legajo.estado }}">
+                            <td><strong>{{ legajo.legajo_id }}</strong></td>
+                            <td>{{ legajo.apellido }}</td>
+                            <td>{{ legajo.nombre }}</td>
+                            <td>{{ legajo.dni or '-' }}</td>
+                            <td>
+                                <span class="estado-badge estado-{{ legajo.estado|lower }}">
+                                    {{ legajo.estado }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="flex gap-1">
+                                    {% set docs = documentos_por_legajo.get(legajo.legajo_id, 0) %}
+                                    <span class="badge badge-{{ 'success' if docs >= 10 else 'warning' }}">
+                                        {{ docs }} docs
+                                    </span>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="table-actions">
+                                    <a href="{{ url_for('ver_legajo', legajo_id=legajo.legajo_id) }}" 
+                                       class="btn btn-sm btn-primary" title="Ver legajo">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('nueva_ddjj', legajo_id=legajo.legajo_id) }}" 
+                                       class="btn btn-sm btn-success" title="Nueva DDJJ">
+                                        <i class="fas fa-file-pdf"></i>
+                                    </a>
+                                    {% if session.rol == 'ADMIN' %}
+                                    <button class="btn btn-sm btn-danger" title="Eliminar" 
+                                            onclick="confirmarEliminacion('{{ legajo.legajo_id }}')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center p-5">
+                                <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
+                                <p>No hay legajos cargados en el sistema</p>
+                                <a href="{{ url_for('nuevo_legajo') }}" class="btn btn-primary">
+                                    Crear Primer Legajo
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Paginación -->
+            <div class="pagination" id="paginacion">
+                <!-- Se genera con JavaScript -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal de confirmación eliminación -->
+    <div id="modalEliminar" class="modal-overlay" style="display: none;">
+        <div class="modal-container modal-confirm">
+            <div class="modal-content">
+                <div class="modal-header bg-danger">
+                    <h3><i class="fas fa-exclamation-triangle"></i> Confirmar Eliminación</h3>
+                    <button class="close-modal" onclick="cerrarModalEliminar()">&times;</button>
+                </div>
+                <div class="modal-body text-center">
+                    <div class="modal-confirm-icon warning">
+                        <i class="fas fa-trash"></i>
+                    </div>
+                    <h4>¿Eliminar legajo <span id="legajoEliminar"></span>?</h4>
+                    <p>Esta acción no se puede deshacer. Se eliminarán todos los documentos y DDJJ asociados.</p>
+                </div>
+                <div class="modal-footer">
+                    <button onclick="cerrarModalEliminar()" class="btn btn-light">Cancelar</button>
+                    <form id="formEliminar" method="POST" style="display: inline;">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash"></i> Eliminar Permanentemente
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="{{ url_for('static', filename='js/lista_legajos.js') }}"></script>
+</body>
+</html>

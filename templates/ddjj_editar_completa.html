@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Editar Declaración Jurada - RRHH DIGITAL</title>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Estilos del sistema -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/estilos.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/panel.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/ddjj.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/botones.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tabla.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/modal.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}">
+    
+    <!-- Select2 para mejor usabilidad -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+</head>
+<body>
+    <div class="sistema-wrapper">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <i class="fas fa-building fa-2x"></i>
+                <h3>LEGAJOS - ARCHIVO Y <br>DECLARACIONES JURADAS DIGITAL</h3>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="{{ url_for('panel') }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                <li><a href="{{ url_for('listar_legajos') }}"><i class="fas fa-folder"></i> Legajos</a></li>
+                <li><a href="{{ url_for('ver_auditoria') }}"><i class="fas fa-history"></i> Auditoría</a></li>
+                <li><a href="{{ url_for('ver_manual') }}"><i class="fas fa-book"></i> Manual</a></li>
+                <li><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Salir</a></li>
+            </ul>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="top-bar">
+                <h2><i class="fas fa-edit"></i> Declaración Jurada {{ ddjj.anio }}</h2>
+                <div class="user-info">
+                    <i class="fas fa-user-circle"></i>
+                    <span>{{ session.usuario }} ({{ session.rol }})</span>
+                    <span class="estado-badge {% if ddjj.estado == 'FINALIZADA' %}estado-activo{% else %}estado-borrador{% endif %}">
+                        {{ ddjj.estado }}
+                    </span>
+                </div>
+            </div>
+            
+            <!-- Barra de progreso del formulario -->
+            <div class="form-progress m-4">
+                <div class="progress-steps">
+                    <div class="step active" data-step="1">1. Datos Personales</div>
+                    <div class="step" data-step="2">2. Estudios y Domicilio</div>
+                    <div class="step" data-step="3">3. Contacto</div>
+                    <div class="step" data-step="4">4. Datos Laborales</div>
+                    <div class="step" data-step="5">5. Salud</div>
+                    <div class="step" data-step="6">6. Cónyuge</div>
+                    <div class="step" data-step="7">7. Familiares a Cargo</div>
+                    <div class="step" data-step="8">8. Padres y Hermanos</div>
+                    <div class="step" data-step="9">9. Revisión</div>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill" style="width: 11%;"></div>
+                </div>
+            </div>
+            
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash-message {{ category }} m-4">
+                            <i class="fas fa-{% if category == 'error' %}exclamation-circle{% else %}check-circle{% endif %}"></i>
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <!-- Formulario Principal -->
+            <form method="POST" action="{{ url_for('editar_ddjj', ddjj_id=ddjj.id) }}" id="formDDJJ" class="m-4">
+                <!-- Datos Básicos (siempre visibles) -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h3><i class="fas fa-id-card"></i> Identificación del Agente</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="grid grid-3 gap-4">
+                            <div class="form-group">
+                                <label><i class="fas fa-hashtag"></i> Legajo</label>
+                                <input type="text" class="form-control" value="{{ legajo.legajo_id }}" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label><i class="fas fa-user"></i> Apellido y Nombre</label>
+                                <input type="text" class="form-control" value="{{ legajo.apellido }} {{ legajo.nombre }}" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label><i class="fas fa-id-card"></i> DNI *</label>
+                                <input type="text" name="dni" class="form-control" value="{{ datos.dni or legajo.dni }}" required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Paso 1: Datos Personales -->
+                <div class="form-step" data-step="1">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h3><i class="fas fa-calendar-alt"></i> Datos Personales</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="grid grid-2 gap-4">
+                                <div class="form-group">
+                                    <label><i class="fas fa-birthday-cake"></i> Fecha de Nacimiento *</label>
+                                    <input type="date" name="fecha_nacimiento" class="form-control" value="{{ datos.fecha_nacimiento }}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label><i class="fas fa-map-marker-alt"></i> Lugar de Nacimiento</label>
+                                    <input type="text" name="lugar_nacimiento" class="form-control" value="{{ datos.lugar_nacimiento }}" placeholder="Ej: Posadas">
+                                </div>
+                                <div class="form-group">
+                                    <label><i class="fas fa-heart"></i> Estado Civil *</label>
+                                    <select name="estado_civil" class="form-control select2" required>
+                                        <option value="">Seleccionar...</option>
+                                        <option value="Soltero" {% if datos.estado_civil == 'Soltero' %}selected{% endif %}>Soltero/a</option>
+                                        <option value="Casado" {% if datos.estado_civil == 'Casado' %}selected{% endif %}>Casado/a</option>
+                                        <option value="Divorciado" {% if datos.estado_civil == 'Divorciado' %}selected{% endif %}>Divorciado/a</option>
+                                        <option value="Separado" {% if datos.estado_civil == 'Separado' %}selected{% endif %}>Separado/a</option>
+                                        <option value="Viudo" {% if datos.estado_civil == 'Viudo' %}selected{% endif %}>Viudo/a</option>
+                                        <option value="Conviviente" {% if datos.estado_civil == 'Conviviente' %}selected{% endif %}>Conviviente</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Paso 2: Estudios y Domicilio -->
+                <div class="form-step" data-step="2" style="display: none;">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h3><i class="fas fa-graduation-cap"></i> Estudios Cursados</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="grid grid-2 gap-4 mb-4">
+                                <div class="form-group">
+                                    <label>Nivel de Estudios *</label>
+                                    <select name="estudios_nivel" class="form-control" required>
+                                        <option value="">Seleccionar...</option>
+                                        <option value="PRIMARIO" {% if datos.estudios_nivel == 'PRIMARIO' %}selected{% endif %}>Primario</option>
+                                        <option value="SECUNDARIO" {% if datos.estudios_nivel == 'SECUNDARIO' %}selected{% endif %}>Secundario</option>
+                                        <option value="TERCIARIO" {% if datos.estudios_nivel == 'TERCIARIO' %}selected{% endif %}>Terciario</option>
+                                        <option value="UNIVERSITARIO" {% if datos.estudios_nivel == 'UNIVERSITARIO' %}selected{% endif %}>Universitario</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Título Obtenido</label>
+                                    <input type="text" name="titulo" class="form-control" value="{{ datos.titulo }}" placeholder="Ej: Bachiller, Licenciado, etc.">
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-2 gap-4">
+                                <div class="form-group">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="estudios_completos" value="SI" {% if datos.estudios_completos == 'SI' %}checked{% endif %}>
+                                        Estudios Completos
+                                    </label>
+                                </div>
+                                <div class="form-group">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="estudios_incompletos" value="SI" {% if datos.estudios_incompletos == 'SI' %}checked{% endif %}>
+                                        Estudios Incompletos
+                                    </label>
+                                </div>
+                                <div class="form-group">
+                                    <label>Años Cursados</label>
+                                    <input type="number" name="anos_cursados" class="form-control" value="{{ datos.anos_cursados }}" min="1" max="6">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h3><i class="fas fa-home"></i> Domicilio Particular</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="grid grid-3 gap-4">
+                                <div class="form-group">
+                                    <label>Barrio</label>
+                                    <input type="text" name="domicilio_barrio" class="form-control" value="{{ datos.domicilio_barrio }}">
+                                </div>
+                                <div class="form-group">
+                                    <label>Chacra</label>
+                                    <input type="text" name="domicilio_chacra" class="form-control" value="{{ datos.domicilio_chacra }}">
+                                </div>
+                                <div class="form-group">
+                                    <label>Calle *</label>
+                                    <input type="text" name="domicilio_calle" class="form-control" value="{{ datos.domicilio_calle }}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Número *</label>
+                                    <input type="text" name="domicilio_numero" class="form-control" value="{{ datos.domicilio_numero }}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Piso</label>
+                                    <input type="text" name="domicilio_piso" class="form-control" value="{{ datos.domicilio_piso }}">
+                                </div>
+                                <div class="form-group">
+                                    <label>Departamento</label>
+                                    <input type="text" name="domicilio_depto" class="form-control" value="{{ datos.domicilio_depto }}">
+                                </div>
+                                <div class="form-group">
+                                    <label>Localidad *</label>
+                                    <input type="text" name="domicilio_localidad" class="form-control" value="{{ datos.domicilio_localidad or 'Posadas' }}" required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Paso 3: Contacto -->
+                <div class="form-step" data-step="3" style="display: none;">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h3><i class="fas fa-address-book"></i> Datos de Contacto</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="grid grid-2 gap-4">
+                                <div class="form-group">
+                                    <label><i class="fas fa-phone"></i> Teléfono Fijo</label>
+                                    <input type="text" name="telefono_fijo" class="form-control" value="{{ datos.telefono_fijo }}" placeholder="Ej: 4444444">
+                                </div>
+                                <div class="form-group">
+                                    <label><i class="fas fa-mobile-alt"></i> Teléfono Celular *</label>
+                                    <input type="text" name="telefono_celular" class="form-control" value="{{ datos.telefono_celular or legajo.telefono }}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label><i class="fas fa-envelope"></i> Correo Electrónico *</label>
+                                    <input type="email" name="correo" class="form-control" value="{{ datos.correo or legajo.email }}" required>
+                                </div>
+                            </div>
+                            
+                            <h4 class="mt-4 mb-3">Contacto de Referencia</h4>
+                            <div class="grid grid-3 gap-4">
+                                <div class="form-group">
+                                    <label>Teléfono de Referencia</label>
+                                    <input type="text" name="telefono_referencia" class="form-control" value="{{ datos.telefono_referencia }}">
+                                </div>
+                                <div class="form-group">
+                                    <label>Nombre y Apellido</label>
+                                    <input type="text" name="nombre_referencia" class="form-control" value="{{ datos.nombre_referencia }}">
+                                </div>
+                                <div class="form-group">
+                                    <label>Parentesco</label>
+                                    <input type="text" name="parentesco_referencia" class="form-control" value="{{ datos.parentesco_referencia }}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Paso 4: Datos Laborales -->
+                <div class="form-step" data-step="4" style="display: none;">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h3><i class="fas fa-briefcase"></i> Datos Laborales</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="grid grid-2 gap-4">
+                                <div class="form-group">
+                                    <label>Fecha de Ingreso</label>
+                                    <input type="date" name="fecha_ingreso" class="form-control" value="{{ datos.fecha_ingreso or legajo.fecha_ingreso }}">
+                                </div>
+                                <div class="form-group">
+                                    <label>Categoría</label>
+                                    <input type="text" name="categoria" class="form-control" value="{{ datos.categoria or legajo.categoria }}">
+                                </div>
+                                <div class="form-group">
+                                    <label>Antigüedad</label>
+                                    <input type="text" name="antiguedad" class="form-control" value="{{ datos.antiguedad }}">
+                                </div>
+                                <div class="form-group">
+                                    <label>Lugar donde se Desempeña</label>
+                                    <input type="text" name="lugar_desempeno" class="form-control" value="{{ datos.lugar_desempeno }}">
+                                </div>
+                                <div class="form-group">
+                                    <label>Actividad que realiza</label>
+                                    <input type="text" name="actividad" class="form-control" value="{{ datos.actividad }}">
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-2 gap-4 mt-3">
+                                <div class="form-group">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="planta_permanente" value="1" {% if datos.planta_permanente %}checked{% endif %}>
+                                        Planta Permanente
+                                    </label>
+                                </div>
+                                <div class="form-group">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="planta_temporaria" value="1" {% if datos.planta_temporaria %}checked{% endif %}>
+                                        Planta Temporaria
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Paso 5: Salud -->
+                <div class="form-step" data-step="5" style="display: none;">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h3><i class="fas fa-heartbeat"></i> Salud</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group mb-4">
+                                <label>Enfermedad Preexistente</label>
+                                <textarea name="enfermedad_preexistente" class="form-control" rows="2">{{ datos.enfermedad_preexistente }}</textarea>
+                            </div>
+                            
+                            <h4 class="mb-3">Vacunas</h4>
+                            <div class="grid grid-3 gap-4">
+                                <div class="form-group">
+                                    <label>COVID-19 (dosis)</label>
+                                    <input type="text" name="vacuna_covid_dosis" class="form-control" value="{{ datos.vacuna_covid_dosis }}">
+                                </div>
+                                <div class="form-group">
+                                    <label>Gripe</label>
+                                    <select name="vacuna_gripe" class="form-control">
+                                        <option value="NO" {% if datos.vacuna_gripe == 'NO' %}selected{% endif %}>No</option>
+                                        <option value="SI" {% if datos.vacuna_gripe == 'SI' %}selected{% endif %}>Sí</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Neumonía</label>
+                                    <select name="vacuna_neumonia" class="form-control">
+                                        <option value="NO" {% if datos.vacuna_neumonia == 'NO' %}selected{% endif %}>No</option>
+                                        <option value="SI" {% if datos.vacuna_neumonia == 'SI' %}selected{% endif %}>Sí</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Paso 6: Cónyuge -->
+                <div class="form-step" data-step="6" style="display: none;">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h3><i class="fas fa-heart"></i> Datos del Cónyuge</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="grid grid-2 gap-4">
+                                <div class="form-group">
+                                    <label>Apellido y Nombre</label>
+                                    <input type="text" name="conyuge_apellido_nombre" class="form-control" value="{{ conyuge.apellido_nombre }}">
+                                </div>
+                                <div class="form-group">
+                                    <label>DNI</label>
+                                    <input type="text" name="conyuge_dni" class="form-control" value="{{ conyuge.dni }}">
+                                </div>
+                                <div class="form-group">
+                                    <label>Fecha de Enlace</label>
+                                    <input type="date" name="conyuge_fecha_enlace" class="form-control" value="{{ conyuge.fecha_enlace }}">
+                                </div>
+                                <div class="form-group">
+                                    <label>Lugar de Enlace</label>
+                                    <input type="text" name="conyuge_lugar_enlace" class="form-control" value="{{ conyuge.lugar_enlace }}">
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-2 gap-4 mt-3">
+                                <div class="form-group">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="conyuge_trabaja" value="1" {% if conyuge.trabaja %}checked{% endif %}>
+                                        ¿Trabaja?
+                                    </label>
+                                </div>
+                                <div class="form-group">
+                                    <label>Razón Social</label>
+                                    <input type="text" name="conyuge_razon_social" class="form-control" value="{{ conyuge.razon_social }}">
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-2 gap-4 mt-3">
+                                <div class="form-group">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="conyuge_percibe_asignaciones" value="1" {% if conyuge.percibe_asignaciones %}checked{% endif %}>
+                                        ¿Percibe Asignaciones Familiares?
+                                    </label>
+                                </div>
+                                <div class="form-group">
+                                    <label>Observaciones</label>
+                                    <textarea name="conyuge_observaciones" class="form-control" rows="2">{{ conyuge.observaciones }}</textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Paso 7: Familiares a Cargo -->
+                <div class="form-step" data-step="7" style="display: none;">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h3><i class="fas fa-users"></i> Familiares a Cargo (Hijos u otros)</h3>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted mb-4">Complete los datos de hasta 7 familiares a cargo. Los campos NI (Nivel Inicial), PRI (Primaria), SEC (Secundaria) y TER/UNIV (Terciario/Universitario) deben completarse con el número de grado/año que cursa.</p>
+                            
+                            {% for i in range(1, 8) %}
+                            <div class="familiar-card mb-4 p-3 border rounded">
+                                <h5 class="mb-3">Familiar {{ i }}</h5>
+                                <div class="grid grid-3 gap-3">
+                                    <div class="form-group">
+                                        <label>Apellido y Nombre</label>
+                                        <input type="text" name="familiar_{{ i }}_apellido_nombre" class="form-control" value="{{ familiares_cargo[i-1].apellido_nombre if i <= familiares_cargo|length else '' }}">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Parentesco</label>
+                                        <select name="familiar_{{ i }}_parentesco" class="form-control">
+                                            <option value="">Seleccionar...</option>
+                                            <option value="Hijo" {% if i <= familiares_cargo|length and familiares_cargo[i-1].parentesco == 'Hijo/a' %}selected{% endif %}>Hijo/a</option>
+                                            <option value="Hija" {% if i <= familiares_cargo|length and familiares_cargo[i-1].parentesco == 'Hija' %}selected{% endif %}>Hija</option>
+                                            <option value="Nieto" {% if i <= familiares_cargo|length and familiares_cargo[i-1].parentesco == 'Nieto' %}selected{% endif %}>Nieto</option>
+                                            <option value="Nieta" {% if i <= familiares_cargo|length and familiares_cargo[i-1].parentesco == 'Nieta' %}selected{% endif %}>Nieta</option>
+                                            <option value="Otro" {% if i <= familiares_cargo|length and familiares_cargo[i-1].parentesco == 'Otro' %}selected{% endif %}>Otro</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" name="familiar_{{ i }}_convive" value="1" {% if i <= familiares_cargo|length and familiares_cargo[i-1].convive %}checked{% endif %}>
+                                            ¿Convive?
+                                        </label>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Fecha Nacimiento</label>
+                                        <input type="date" name="familiar_{{ i }}_fecha_nacimiento" class="form-control" value="{{ familiares_cargo[i-1].fecha_nacimiento if i <= familiares_cargo|length else '' }}">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Edad</label>
+                                        <input type="number" name="familiar_{{ i }}_edad" class="form-control" value="{{ familiares_cargo[i-1].edad if i <= familiares_cargo|length else '' }}">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>DNI</label>
+                                        <input type="text" name="familiar_{{ i }}_dni" class="form-control" value="{{ familiares_cargo[i-1].dni if i <= familiares_cargo|length else '' }}">
+                                    </div>
+                                </div>
+                                
+                                <div class="grid grid-4 gap-3 mt-3">
+                                    <div class="form-group">
+                                        <label>Nivel Inicial</label>
+                                        <input type="text" name="familiar_{{ i }}_ni" class="form-control" value="{{ familiares_cargo[i-1].ni if i <= familiares_cargo|length else '' }}" placeholder="Sala: 3,4,5">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Primaria</label>
+                                        <input type="text" name="familiar_{{ i }}_pri" class="form-control" value="{{ familiares_cargo[i-1].pri if i <= familiares_cargo|length else '' }}" placeholder="Grado: 1-7">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Secundaria</label>
+                                        <input type="text" name="familiar_{{ i }}_sec" class="form-control" value="{{ familiares_cargo[i-1].sec if i <= familiares_cargo|length else '' }}" placeholder="Año: 1-6">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Terciario/Univ.</label>
+                                        <input type="text" name="familiar_{{ i }}_ter_univ" class="form-control" value="{{ familiares_cargo[i-1].ter_univ if i <= familiares_cargo|length else '' }}" placeholder="Año: 1-6">
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Paso 8: Padres y Hermanos -->
+                <div class="form-step" data-step="8" style="display: none;">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h3><i class="fas fa-user-friends"></i> Padres y Hermanos</h3>
+                        </div>
+                        <div class="card-body">
+                            {% for i in range(1, 7) %}
+                            <div class="familiar-card mb-4 p-3 border rounded">
+                                <h5 class="mb-3">Familiar {{ i }}</h5>
+                                <div class="grid grid-3 gap-3">
+                                    <div class="form-group">
+                                        <label>Apellido y Nombre</label>
+                                        <input type="text" name="ph_{{ i }}_apellido_nombre" class="form-control" value="{{ padres_hermanos[i-1].apellido_nombre if i <= padres_hermanos|length else '' }}">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Parentesco</label>
+                                        <select name="ph_{{ i }}_parentesco" class="form-control">
+                                            <option value="">Seleccionar...</option>
+                                            <option value="Padre" {% if i <= padres_hermanos|length and padres_hermanos[i-1].parentesco == 'Padre' %}selected{% endif %}>Padre</option>
+                                            <option value="Madre" {% if i <= padres_hermanos|length and padres_hermanos[i-1].parentesco == 'Madre' %}selected{% endif %}>Madre</option>
+                                            <option value="Hermano" {% if i <= padres_hermanos|length and padres_hermanos[i-1].parentesco == 'Hermano' %}selected{% endif %}>Hermano</option>
+                                            <option value="Hermana" {% if i <= padres_hermanos|length and padres_hermanos[i-1].parentesco == 'Hermana' %}selected{% endif %}>Hermana</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" name="ph_{{ i }}_convive" value="1" {% if i <= padres_hermanos|length and padres_hermanos[i-1].convive %}checked{% endif %}>
+                                            ¿Convive?
+                                        </label>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Fecha Nacimiento</label>
+                                        <input type="date" name="ph_{{ i }}_fecha_nacimiento" class="form-control" value="{{ padres_hermanos[i-1].fecha_nacimiento if i <= padres_hermanos|length else '' }}">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>DNI</label>
+                                        <input type="text" name="ph_{{ i }}_dni" class="form-control" value="{{ padres_hermanos[i-1].dni if i <= padres_hermanos|length else '' }}">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Observación</label>
+                                        <input type="text" name="ph_{{ i }}_observacion" class="form-control" value="{{ padres_hermanos[i-1].observacion if i <= padres_hermanos|length else '' }}">
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Paso 9: Revisión y Finalización -->
+                <div class="form-step" data-step="9" style="display: none;">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h3><i class="fas fa-check-circle"></i> Revisión Final</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i>
+                                Revise cuidadosamente todos los datos antes de finalizar. Una vez finalizada la DDJJ, no podrá modificarla.
+                            </div>
+                            
+                            <div class="declaracion-jurada-texto p-4" style="background: #f9f9f9; border: 1px solid #ddd; font-family: 'Courier New', monospace;">
+                                <p>Declaro bajo juramento de ley que los datos consignados en el presente formulario son correctos y completos, sin omitir ni falsear dato alguno, y que los documentos presentados son auténticos y válidos.</p>
+                                <p>Asimismo, tomo conocimiento que cualquier falsedad u omisión será pasible de las sanciones administrativas y legales correspondientes, conforme al Estatuto del Empleado Municipal y leyes vigentes.</p>
+                            </div>
+                            
+                            <div class="form-group mt-4">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="aceptoDeclaracion" required>
+                                    <strong>He revisado toda la información y declaro bajo juramento que los datos son correctos</strong>
+                                </label>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Lugar</label>
+                                <input type="text" name="lugar" class="form-control" value="{{ datos.lugar or 'Posadas' }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Botones de navegación -->
+                <div class="flex justify-between align-center mt-4">
+                    <div>
+                        <button type="button" class="btn btn-light" id="btnAnterior" onclick="cambiarPaso(-1)" disabled>
+                            <i class="fas fa-arrow-left"></i> Anterior
+                        </button>
+                        <button type="button" class="btn btn-light" id="btnSiguiente" onclick="cambiarPaso(1)">
+                            Siguiente <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                    
+                    <div>
+                        <a href="{{ url_for('ver_legajo', legajo_id=legajo.legajo_id) }}" class="btn btn-light">
+                            <i class="fas fa-times"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary" id="btnGuardar">
+                            <i class="fas fa-save"></i> Guardar Borrador
+                        </button>
+                        {% if ddjj.estado == 'BORRADOR' %}
+                        <button type="button" class="btn btn-success" id="btnFinalizar" onclick="confirmarFinalizacion()">
+                            <i class="fas fa-check"></i> Finalizar DDJJ
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Modal de Confirmación para Finalizar -->
+    <div id="modalFinalizar" class="modal-overlay" style="display: none;">
+        <div class="modal-container modal-confirm">
+            <div class="modal-content">
+                <div class="modal-header bg-success">
+                    <h3><i class="fas fa-check-circle"></i> Confirmar Finalización</h3>
+                    <button class="close-modal" onclick="cerrarModalFinalizar()">&times;</button>
+                </div>
+                <div class="modal-body text-center">
+                    <div class="modal-confirm-icon success">
+                        <i class="fas fa-file-pdf"></i>
+                    </div>
+                    <h4>¿Finalizar Declaración Jurada {{ ddjj.anio }}?</h4>
+                    <p class="text-muted">Una vez finalizada:</p>
+                    <ul class="text-left">
+                        <li>✓ Se generará el PDF con código QR y hash de validación</li>
+                        <li>✓ Se sellará digitalmente el documento</li>
+                        <li>✓ La DDJJ quedará bloqueada y no podrá modificarse</li>
+                        <li>✓ Se enviará notificación al agente</li>
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <button onclick="cerrarModalFinalizar()" class="btn btn-light">Cancelar</button>
+                    <form method="POST" action="{{ url_for('finalizar_ddjj', ddjj_id=ddjj.id) }}" style="display: inline;">
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-check"></i> Sí, Finalizar DDJJ
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="{{ url_for('static', filename='js/ddjj.js') }}"></script>
+    
+    <script>
+        // Inicializar Select2
+        $(document).ready(function() {
+            $('.select2').select2({
+                width: '100%'
+            });
+        });
+        
+        // Variables globales
+        let pasoActual = 1;
+        const totalPasos = 9;
+        
+        // Función para cambiar de paso
+        function cambiarPaso(direccion) {
+            const nuevoPaso = pasoActual + direccion;
+            if (nuevoPaso < 1 || nuevoPaso > totalPasos) return;
+            
+            // Ocultar paso actual
+            document.querySelector(`.form-step[data-step="${pasoActual}"]`).style.display = 'none';
+            document.querySelector(`.step[data-step="${pasoActual}"]`).classList.remove('active');
+            
+            // Mostrar nuevo paso
+            pasoActual = nuevoPaso;
+            document.querySelector(`.form-step[data-step="${pasoActual}"]`).style.display = 'block';
+            document.querySelector(`.step[data-step="${pasoActual}"]`).classList.add('active');
+            
+            // Actualizar barra de progreso
+            const progreso = (pasoActual / totalPasos) * 100;
+            document.querySelector('.progress-bar-fill').style.width = progreso + '%';
+            
+            // Actualizar botones
+            document.getElementById('btnAnterior').disabled = (pasoActual === 1);
+            
+            if (pasoActual === totalPasos) {
+                document.getElementById('btnSiguiente').style.display = 'none';
+            } else {
+                document.getElementById('btnSiguiente').style.display = 'inline-block';
+            }
+            
+            // Scroll al inicio
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        
+        // Función para confirmar finalización
+        function confirmarFinalizacion() {
+            // Validar que aceptó la declaración
+            if (!document.getElementById('aceptoDeclaracion').checked) {
+                alert('Debe aceptar la declaración jurada para finalizar');
+                return;
+            }
+            document.getElementById('modalFinalizar').style.display = 'block';
+        }
+        
+        function cerrarModalFinalizar() {
+            document.getElementById('modalFinalizar').style.display = 'none';
+        }
+        
+        // Validación antes de guardar
+        document.getElementById('formDDJJ').addEventListener('submit', function(e) {
+            // Validar campos requeridos del paso actual
+            const pasoActualElement = document.querySelector(`.form-step[data-step="${pasoActual}"]`);
+            const requireds = pasoActualElement.querySelectorAll('[required]');
+            
+            for (let input of requireds) {
+                if (!input.value) {
+                    e.preventDefault();
+                    alert('Complete todos los campos requeridos (marcados con *)');
+                    input.focus();
+                    return;
+                }
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,138 @@
+/* ========================================
+   RESPONSIVE - MEDIA QUERIES GLOBALES
+   ======================================== */
+
+/* Desktop grande (1200px o más) */
+@media (min-width: 1200px) {
+    .container {
+        max-width: 1140px;
+        margin: 0 auto;
+    }
+}
+
+/* Desktop (992px - 1199px) */
+@media (min-width: 992px) and (max-width: 1199px) {
+    .container {
+        max-width: 960px;
+        margin: 0 auto;
+    }
+}
+
+/* Tablet horizontal (768px - 991px) */
+@media (min-width: 768px) and (max-width: 991px) {
+    .container {
+        max-width: 720px;
+        margin: 0 auto;
+    }
+    
+    .hide-tablet {
+        display: none;
+    }
+    
+    /* Ajustes generales */
+    h1 { font-size: 24px; }
+    h2 { font-size: 20px; }
+    h3 { font-size: 18px; }
+}
+
+/* Tablet vertical y móviles (767px o menos) */
+@media (max-width: 767px) {
+    .container {
+        width: 100%;
+        padding: 0 15px;
+    }
+    
+    .hide-mobile {
+        display: none;
+    }
+    
+    /* Tipografía */
+    h1 { font-size: 20px; }
+    h2 { font-size: 18px; }
+    h3 { font-size: 16px; }
+    
+    /* Layout */
+    .flex-mobile-column {
+        flex-direction: column;
+    }
+    
+    .grid-mobile-1 {
+        grid-template-columns: 1fr !important;
+    }
+    
+    /* Espaciado */
+    .p-mobile-2 {
+        padding: 10px !important;
+    }
+    
+    .m-mobile-0 {
+        margin: 0 !important;
+    }
+}
+
+/* Móvil pequeño (480px o menos) */
+@media (max-width: 480px) {
+    .hide-phone {
+        display: none;
+    }
+    
+    /* Tipografía aún más pequeña */
+    body {
+        font-size: 14px;
+    }
+    
+    h1 { font-size: 18px; }
+    h2 { font-size: 16px; }
+    h3 { font-size: 14px; }
+    
+    /* Botones full width */
+    .btn-block-phone {
+        width: 100%;
+    }
+    
+    /* Ocultar elementos complejos */
+    .complex-ui {
+        display: none;
+    }
+    
+    /* Mostrar versión simplificada */
+    .simple-ui {
+        display: block;
+    }
+}
+
+/* Impresión */
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    
+    .sidebar, 
+    .top-bar, 
+    .btn,
+    .modal-overlay {
+        display: none !important;
+    }
+    
+    .main-content {
+        margin-left: 0 !important;
+        padding: 0 !important;
+    }
+    
+    body {
+        background: white;
+    }
+    
+    .table-container {
+        box-shadow: none;
+    }
+    
+    a {
+        text-decoration: none;
+        color: black;
+    }
+    
+    @page {
+        margin: 2cm;
+    }
+}

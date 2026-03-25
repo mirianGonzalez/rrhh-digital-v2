@@ -1,0 +1,414 @@
+/* ========================================
+   MANUAL DE USUARIO - ESTILOS ESPECÍFICOS
+   ======================================== */
+
+.manual-container {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 30px;
+    background: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    min-height: calc(100vh - 120px);
+}
+
+/* Índice del manual */
+.manual-indice {
+    background: linear-gradient(180deg, var(--gray-50), white);
+    border-right: 1px solid var(--gray-200);
+    padding: 30px 20px;
+    position: sticky;
+    top: 80px;
+    height: fit-content;
+    max-height: calc(100vh - 100px);
+    overflow-y: auto;
+}
+
+.manual-indice h3 {
+    color: var(--primary);
+    font-size: 18px;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--primary);
+}
+
+.manual-indice ul {
+    list-style: none;
+    padding: 0;
+}
+
+.manual-indice li {
+    margin-bottom: 8px;
+}
+
+.manual-indice a {
+    color: var(--gray-700);
+    text-decoration: none;
+    display: block;
+    padding: 8px 12px;
+    border-radius: var(--border-radius-sm);
+    transition: var(--transition);
+    font-size: 14px;
+    border-left: 2px solid transparent;
+}
+
+.manual-indice a:hover {
+    background: var(--gray-100);
+    color: var(--primary);
+    border-left-color: var(--primary);
+    padding-left: 20px;
+}
+
+.manual-indice ul ul {
+    margin-left: 20px;
+    margin-top: 5px;
+    margin-bottom: 10px;
+}
+
+.manual-indice ul ul a {
+    font-size: 13px;
+    padding: 5px 12px;
+}
+
+/* Contenido del manual */
+.manual-contenido {
+    padding: 40px;
+    overflow-y: auto;
+}
+
+.manual-section {
+    margin-bottom: 50px;
+    scroll-margin-top: 100px;
+}
+
+.manual-section h2 {
+    color: var(--primary);
+    font-size: 24px;
+    margin-bottom: 25px;
+    padding-bottom: 10px;
+    border-bottom: 3px solid var(--primary);
+    position: relative;
+}
+
+.manual-section h2::after {
+    content: '';
+    position: absolute;
+    bottom: -3px;
+    left: 0;
+    width: 100px;
+    height: 3px;
+    background: var(--secondary);
+}
+
+.manual-section h3 {
+    color: var(--secondary);
+    font-size: 20px;
+    margin: 25px 0 15px;
+}
+
+.manual-section h4 {
+    color: var(--gray-700);
+    font-size: 18px;
+    margin: 20px 0 10px;
+}
+
+/* Tarjetas del manual */
+.manual-card {
+    background: white;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--border-radius);
+    padding: 25px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition);
+}
+
+.manual-card:hover {
+    box-shadow: var(--shadow);
+    border-color: var(--primary);
+}
+
+.manual-card p {
+    color: var(--gray-600);
+    line-height: 1.6;
+    margin-bottom: 15px;
+}
+
+.manual-card ul, 
+.manual-card ol {
+    margin-left: 20px;
+    margin-bottom: 15px;
+    color: var(--gray-600);
+}
+
+.manual-card li {
+    margin-bottom: 8px;
+    line-height: 1.5;
+}
+
+.manual-card code {
+    background: var(--gray-100);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    color: var(--primary);
+    border: 1px solid var(--gray-200);
+}
+
+.manual-card pre {
+    background: var(--gray-900);
+    color: #fff;
+    padding: 15px;
+    border-radius: var(--border-radius-sm);
+    overflow-x: auto;
+    font-size: 13px;
+    line-height: 1.4;
+    margin: 15px 0;
+}
+
+/* Notas y advertencias */
+.manual-nota {
+    background: #e3f2fd;
+    border-left: 4px solid var(--primary);
+    padding: 15px 20px;
+    border-radius: var(--border-radius-sm);
+    margin: 20px 0;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.manual-nota i {
+    font-size: 24px;
+    color: var(--primary);
+}
+
+.manual-advertencia {
+    background: #fff3e0;
+    border-left: 4px solid var(--warning);
+    padding: 15px 20px;
+    border-radius: var(--border-radius-sm);
+    margin: 20px 0;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.manual-advertencia i {
+    font-size: 24px;
+    color: var(--warning);
+}
+
+.manual-tip {
+    background: #e8f5e9;
+    border-left: 4px solid var(--success);
+    padding: 15px 20px;
+    border-radius: var(--border-radius-sm);
+    margin: 20px 0;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.manual-tip i {
+    font-size: 24px;
+    color: var(--success);
+}
+
+/* Pasos numerados */
+.manual-steps {
+    counter-reset: step-counter;
+    list-style: none;
+    padding: 0;
+}
+
+.manual-steps li {
+    counter-increment: step-counter;
+    margin-bottom: 15px;
+    padding-left: 40px;
+    position: relative;
+}
+
+.manual-steps li::before {
+    content: counter(step-counter);
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 28px;
+    height: 28px;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+/* Tabla de contenido */
+.manual-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+}
+
+.manual-table th {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    padding: 12px;
+    text-align: left;
+    font-weight: 500;
+}
+
+.manual-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.manual-table tr:hover {
+    background: var(--gray-50);
+}
+
+/* Imágenes del manual */
+.manual-img {
+    max-width: 100%;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    margin: 20px 0;
+}
+
+.manual-img-caption {
+    text-align: center;
+    font-size: 13px;
+    color: var(--gray-500);
+    margin-top: 5px;
+}
+
+/* Atajos de teclado */
+.kbd {
+    background: var(--gray-800);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 12px;
+    border: 1px solid var(--gray-600);
+    box-shadow: 0 2px 0 var(--gray-900);
+}
+
+/* Preguntas frecuentes */
+.faq-item {
+    border-bottom: 1px solid var(--gray-200);
+    margin-bottom: 15px;
+}
+
+.faq-question {
+    padding: 15px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+    color: var(--primary);
+    transition: var(--transition);
+}
+
+.faq-question:hover {
+    background: var(--gray-50);
+}
+
+.faq-question i {
+    transition: transform 0.3s ease;
+}
+
+.faq-question.active i {
+    transform: rotate(180deg);
+}
+
+.faq-answer {
+    display: none;
+    padding: 0 15px 15px 15px;
+    color: var(--gray-600);
+    line-height: 1.6;
+}
+
+.faq-answer.show {
+    display: block;
+}
+
+/* Footer del manual */
+.manual-footer {
+    margin-top: 50px;
+    padding-top: 20px;
+    border-top: 1px solid var(--gray-200);
+    text-align: center;
+    color: var(--gray-500);
+    font-size: 13px;
+}
+
+/* Versión para impresión */
+@media print {
+    .sidebar,
+    .top-bar,
+    .btn-float,
+    .manual-indice {
+        display: none !important;
+    }
+    
+    .manual-container {
+        display: block;
+        grid-template-columns: 1fr;
+    }
+    
+    .manual-contenido {
+        padding: 20px;
+    }
+    
+    .manual-card {
+        break-inside: avoid;
+        box-shadow: none;
+        border: 1px solid #ccc;
+    }
+    
+    a {
+        text-decoration: none;
+        color: black;
+    }
+    
+    h2, h3 {
+        page-break-after: avoid;
+    }
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .manual-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .manual-indice {
+        position: relative;
+        top: 0;
+        max-height: none;
+        border-right: none;
+        border-bottom: 1px solid var(--gray-200);
+    }
+}
+
+@media (max-width: 768px) {
+    .manual-contenido {
+        padding: 20px;
+    }
+    
+    .manual-section h2 {
+        font-size: 20px;
+    }
+    
+    .manual-section h3 {
+        font-size: 18px;
+    }
+}

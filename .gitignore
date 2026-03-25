@@ -1,0 +1,34 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Base de datos
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# Archivos del sistema
+.DS_Store
+.env
+*.log
+
+# Directorios de datos (se crearán automáticamente en producción)
+DOCUMENTOS_AGENTES/
+qr_ddjj/
+BACKUPS/
+LOGS/
+CERTIFICADOS/
+
+# Archivos de backup
+*.zip
+*.bak
+
+# Entorno virtual
+.venv/
+env/
+ENV/
+venv/

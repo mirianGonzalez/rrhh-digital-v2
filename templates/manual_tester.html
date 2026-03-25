@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Guía del Tester - RRHH DIGITAL</title>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Estilos del sistema -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/estilos.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/panel.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/manual.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}">
+</head>
+<body>
+    <div class="sistema-wrapper">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <i class="fas fa-building fa-2x"></i>
+                <h3>RRHH DIGITAL</h3>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="{{ url_for('panel') }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                <li><a href="{{ url_for('listar_legajos') }}"><i class="fas fa-folder"></i> Legajos</a></li>
+                <li><a href="{{ url_for('ver_auditoria') }}"><i class="fas fa-history"></i> Auditoría</a></li>
+                <li><a href="{{ url_for('ver_manual') }}"><i class="fas fa-book"></i> Manual</a></li>
+                <li><a href="{{ url_for('manual_tester') }}" class="active"><i class="fas fa-flask"></i> Guía Tester</a></li>
+                <li><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Salir</a></li>
+            </ul>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="top-bar">
+                <h2><i class="fas fa-flask"></i> Guía para Testers</h2>
+                <div class="user-info">
+                    <i class="fas fa-user-circle"></i>
+                    <span>{{ session.usuario }} ({{ session.rol }})</span>
+                </div>
+            </div>
+            
+            <div class="manual-container">
+                <!-- Índice lateral -->
+                <div class="manual-indice">
+                    <h3><i class="fas fa-list"></i> Contenido</h3>
+                    <ul>
+                        <li><a href="#credenciales">📋 Tus Credenciales</a></li>
+                        <li><a href="#objetivo">🎯 Objetivo de la Prueba</a></li>
+                        <li><a href="#acceso">🔐 Acceso al Sistema</a></li>
+                        <li><a href="#legajo">📁 Tu Legajo</a>
+                            <ul>
+                                <li><a href="#ver-legajo">Ver tu legajo</a></li>
+                                <li><a href="#subir-documentos">Subir documentos</a></li>
+                            </ul>
+                        </li>
+                        <li><a href="#ddjj">📄 Declaración Jurada</a>
+                            <ul>
+                                <li><a href="#ddjj-manual">Completar manual</a></li>
+                                <li><a href="#ddjj-prueba">DDJJ automática</a></li>
+                                <li><a href="#finalizar">Finalizar y validar</a></li>
+                            </ul>
+                        </li>
+                        <li><a href="#validar">✅ Probar Validación</a></li>
+                        <li><a href="#reportar">🐛 Reportar Problemas</a></li>
+                        <li><a href="#checklist">📊 Checklist de Prueba</a></li>
+                    </ul>
+                </div>
+                
+                <!-- Contenido del manual -->
+                <div class="manual-contenido">
+                    <h1 style="color: var(--primary); margin-bottom: 30px;">
+                        <i class="fas fa-flask"></i> GUÍA PARA TESTERS
+                    </h1>
+                    
+                    <!-- CREDENCIALES -->
+                    <section id="credenciales" class="manual-section">
+                        <h2><i class="fas fa-key"></i> Tus Credenciales de Acceso</h2>
+                        
+                        <div class="manual-tip">
+                            <i class="fas fa-info-circle"></i>
+                            <div>
+                                <strong>Importante:</strong> Usá estas credenciales para ingresar al sistema. 
+                                La contraseña es la misma para todos los testers.
+                            </div>
+                        </div>
+                        
+                        <div class="manual-card">
+                            <table class="manual-table">
+                                <thead>
+                                    <tr>
+                                        <th>Tester</th>
+                                        <th>Usuario</th>
+                                        <th>Contraseña</th>
+                                        <th>Legajo</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td>Tester 1</td><td><code>tester1</code></td><td><code>Test2026!</code></td><td>99901</td></tr>
+                                    <tr><td>Tester 2</td><td><code>tester2</code></td><td><code>Test2026!</code></td><td>99902</td></tr>
+                                    <tr><td>Tester 3</td><td><code>tester3</code></td><td><code>Test2026!</code></td><td>99903</td></tr>
+                                    <tr><td>Tester 4</td><td><code>tester4</code></td><td><code>Test2026!</code></td><td>99904</td></tr>
+                                    <tr><td>Tester 5</td><td><code>tester5</code></td><td><code>Test2026!</code></td><td>99905</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="manual-advertencia">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <div>
+                                <strong>⚠️ Importante:</strong>
+                                <ul style="margin-top: 10px;">
+                                    <li>Cada tester ve SOLO su propio legajo (el 999xx asignado)</li>
+                                    <li>Podés cambiar la contraseña después desde el icono <i class="fas fa-key"></i></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </section>
+                    
+                    <!-- OBJETIVO -->
+                    <section id="objetivo" class="manual-section">
+                        <h2><i class="fas fa-bullseye"></i> Objetivo de la Prueba</h2>
+                        
+                        <div class="manual-card">
+                            <p>Como tester, tu objetivo es:</p>
+                            <ul>
+                                <li>✅ Explorar todas las funciones del sistema</li>
+                                <li>✅ Subir documentos de prueba</li>
+                                <li>✅ Completar una Declaración Jurada</li>
+                                <li>✅ Reportar cualquier error o dificultad</li>
+                                <li>✅ Sugerir mejoras de usabilidad</li>
+                            </ul>
+                        </div>
+                    </section>
+                    
+                    <!-- ACCESO -->
+                    <section id="acceso" class="manual-section">
+                        <h2><i class="fas fa-sign-in-alt"></i> Acceso al Sistema</h2>
+                        
+                        <div class="manual-card">
+                            <ol class="manual-steps">
+                                <li><strong>URL de acceso:</strong> <code>http://[IP_DEL_SERVIDOR]:5000</code></li>
+                                <li><strong>Usuario:</strong> Ingresá tu usuario (tester1, tester2, etc.)</li>
+                                <li><strong>Contraseña:</strong> <code>Test2026!</code></li>
+                                <li>Hacé clic en <strong>"Ingresar"</strong></li>
+                            </ol>
+                        </div>
+                    </section>
+                    
+                    <!-- LEGAJO -->
+                    <section id="legajo" class="manual-section">
+                        <h2><i class="fas fa-folder-open"></i> Tu Legajo</h2>
+                        
+                        <h3 id="ver-legajo">Ver tu legajo</h3>
+                        <div class="manual-card">
+                            <ol class="manual-steps">
+                                <li>En el menú izquierdo, hacé clic en <strong>"Legajos"</strong></li>
+                                <li>Buscá tu número de legajo (99901, 99902, etc.)</li>
+                                <li>Hacé clic en <strong>"Ver Detalle"</strong></li>
+                            </ol>
+                            
+                            <p>En tu legajo vas a encontrar:</p>
+                            <ul>
+                                <li><strong>Barra de progreso:</strong> Muestra cuántos documentos llevás</li>
+                                <li><strong>Documentos obligatorios:</strong> Organizados por categoría</li>
+                                <li><strong>Botones para DDJJ:</strong> Para crear tu declaración jurada</li>
+                            </ul>
+                        </div>
+                        
+                        <h3 id="subir-documentos">Subir documentos de prueba</h3>
+                        <div class="manual-card">
+                            <p><strong>Documentos obligatorios:</strong> DNI, Partida de Nacimiento, CUIL, Foto, Título, Contrato</p>
+                            
+                            <ol class="manual-steps">
+                                <li>Buscá el documento en la lista</li>
+                                <li>Hacé clic en el botón <strong>"Subir"</strong></li>
+                                <li>Seleccioná un archivo desde tu PC</li>
+                                <li>Esperá a que se complete la subida</li>
+                            </ol>
+                            
+                            <div class="manual-nota">
+                                <i class="fas fa-info-circle"></i>
+                                <div>
+                                    <strong>Formatos aceptados:</strong> PDF, JPG, PNG, DOC, DOCX (máx 50MB)
+                                </div>
+                            </div>
+                            
+                            <div class="manual-tip">
+                                <i class="fas fa-lightbulb"></i>
+                                <div>
+                                    <strong>Para la prueba:</strong> Podés subir cualquier archivo de prueba 
+                                    (no necesitan ser documentos reales).
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    
+                    <!-- DDJJ -->
+                    <section id="ddjj" class="manual-section">
+                        <h2><i class="fas fa-file-pdf"></i> Declaración Jurada</h2>
+                        
+                        <div class="manual-advertencia">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <div>
+                                <strong>Requisito:</strong> Todos los documentos obligatorios deben estar subidos 
+                                (marcados como COMPLETO).
+                            </div>
+                        </div>
+                        
+                        <h3 id="ddjj-manual">Opción 1: Completar manualmente</h3>
+                        <div class="manual-card">
+                            <ol class="manual-steps">
+                                <li>Hacé clic en <strong>"Nueva DDJJ"</strong></li>
+                                <li>Completá el formulario con tus datos de prueba</li>
+                                <li>Hacé clic en <strong>"Guardar"</strong> para guardar el borrador</li>
+                                <li>Cuando esté todo completo, hacé clic en <strong>"Finalizar DDJJ"</strong></li>
+                            </ol>
+                        </div>
+                        
+                        <h3 id="ddjj-prueba">Opción 2: DDJJ automática (más rápido)</h3>
+                        <div class="manual-card">
+                            <ol class="manual-steps">
+                                <li>Hacé clic en el botón <strong style="background: #ffc107; color: black; padding: 5px 10px; border-radius: 4px;">✨ Crear DDJJ de Prueba</strong></li>
+                                <li>El sistema creará automáticamente una DDJJ con datos ficticios</li>
+                                <li>Luego hacé clic en <strong>"Finalizar DDJJ"</strong> para generar el PDF</li>
+                            </ol>
+                        </div>
+                        
+                        <h3 id="finalizar">¿Qué genera el sistema?</h3>
+                        <div class="manual-card">
+                            <ul>
+                                <li>✅ Un PDF con todos tus datos</li>
+                                <li>✅ Código QR único para validación</li>
+                                <li>✅ Código de verificación de 16 caracteres</li>
+                                <li>✅ Sello digital del organismo</li>
+                            </ul>
+                        </div>
+                    </section>
+                    
+                    <!-- VALIDACIÓN -->
+                    <section id="validar" class="manual-section">
+                        <h2><i class="fas fa-qrcode"></i> Probar la Validación</h2>
+                        
+                        <div class="manual-card">
+                            <ol class="manual-steps">
+                                <li>Generá una DDJJ (con cualquiera de las opciones)</li>
+                                <li>En el PDF generado, encontrá el código QR</li>
+                                <li>Escanéalo con cualquier lector QR</li>
+                                <li>O ingresá manualmente a: <code>http://[IP]/validar/[CÓDIGO]</code></li>
+                                <li>El sistema mostrará los datos de la DDJJ</li>
+                            </ol>
+                        </div>
+                    </section>
+                    
+                    <!-- REPORTAR PROBLEMAS -->
+                    <section id="reportar" class="manual-section">
+                        <h2><i class="fas fa-bug"></i> Reportar Problemas</h2>
+                        
+                        <div class="manual-card">
+                            <p>Si encontrás algún error o dificultad, reportalo con:</p>
+                            <ul>
+                                <li><strong>Qué hiciste:</strong> Pasos para llegar al error</li>
+                                <li><strong>Qué esperabas:</strong> Lo que debería pasar</li>
+                                <li><strong>Qué pasó:</strong> El error exacto</li>
+                                <li><strong>Captura de pantalla:</strong> Si es posible</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="manual-nota">
+                            <i class="fas fa-envelope"></i>
+                            <div>
+                                <strong>Contacto:</strong> [TU_EMAIL] - [TU_TELÉFONO]
+                            </div>
+                        </div>
+                    </section>
+                    
+                    <!-- CHECKLIST -->
+                    <section id="checklist" class="manual-section">
+                        <h2><i class="fas fa-check-circle"></i> Checklist de Prueba</h2>
+                        
+                        <div class="manual-card">
+                            <table class="manual-table">
+                                <thead>
+                                    <tr>
+                                        <th>Item a probar</th>
+                                        <th>Resultado esperado</th>
+                                        <th>¿Funcionó?</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td>Acceso con usuario/contraseña</td><td>Ingresar al panel</td><td>⬜ Sí ⬜ No</td></tr>
+                                    <tr><td>Ver legajo propio</td><td>Mostrar datos del legajo 999xx</td><td>⬜ Sí ⬜ No</td></tr>
+                                    <tr><td>Subir un documento</td><td>Aparecer como COMPLETO</td><td>⬜ Sí ⬜ No</td></tr>
+                                    <tr><td>Subir todos los obligatorios</td><td>Barra de progreso al 100%</td><td>⬜ Sí ⬜ No</td></tr>
+                                    <tr><td>Crear DDJJ manual</td><td>Formulario guarda datos</td><td>⬜ Sí ⬜ No</td></tr>
+                                    <tr><td>Finalizar DDJJ</td><td>Generar PDF con QR</td><td>⬜ Sí ⬜ No</td></tr>
+                                    <tr><td>Crear DDJJ de prueba</td><td>Generar PDF automático</td><td>⬜ Sí ⬜ No</td></tr>
+                                    <tr><td>Validar con QR</td><td>Mostrar datos de la DDJJ</td><td>⬜ Sí ⬜ No</td></tr>
+                                    <tr><td>Cerrar sesión</td><td>Volver al login</td><td>⬜ Sí ⬜ No</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div style="text-align: center; margin: 40px 0;">
+                            <p style="font-size: 1.2rem;"><strong>¡Gracias por participar en la prueba!</strong></p>
+                            <p>Tu feedback nos ayuda a mejorar el sistema.</p>
+                        </div>
+                    </section>
+                    
+                    <!-- Footer -->
+                    <div class="manual-footer">
+                        <p>© 2026 RRHH DIGITAL - Todos los derechos reservados a
+					    <a href="https://www.linkedin.com/in/mirian-yolanda-gonzalez/" target="_blank">
+						    Mirian Yolanda Gonzalez
+					    </a>
+                        </p>
+                        <p>Versión para Testers - Marzo 2026</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
