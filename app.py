@@ -1024,7 +1024,8 @@ def agregar_columnas_faltantes():
             'tipo_personal',
             'antiguedad',
             'lugar_desempeno',
-            'obra_social'
+            'obra_social',
+            'estado_civil' 
         ]
         
         # Agregar columnas faltantes
@@ -1243,6 +1244,7 @@ def init_db():
             CREATE TABLE IF NOT EXISTS ddjj_conyuge(
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 ddjj_id INTEGER NOT NULL,
+                estado_civil TEXT, 
                 apellido_nombre TEXT,
                 dni TEXT,
                 fecha_enlace TEXT,
