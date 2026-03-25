@@ -1854,7 +1854,23 @@ def generar_ddjj_con_firma(legajo_id, ddjj_id, pin_agente):
 
 @app.before_first_request
 def inicializar_sistema():
+    """Inicializa el sistema completo"""
     init_db()
+    
+    # Agregar columnas faltantes a legajos
+    try:
+        agregar_columnas_faltantes()
+    except Exception as e:
+        print(f"⚠️ Error en migración de columnas: {e}")
+    
+    # Crear índice para codigo_validacion
+    try:
+        crear_indice_codigo_validacion()
+    except Exception as e:
+        print(f"⚠️ Error creando índice: {e}")
+    
+    print("✅ Sistema inicializado correctamente")
+
 
 
 @app.route('/admin/backup/crear', methods=['POST'])
@@ -2221,10 +2237,26 @@ def init_db():
     # Índices
     cur.execute("CREATE INDEX IF NOT EXISTS idx_legajos_legajo_id ON legajos(legajo_id)")
     cur.execute("CREATE INDEX IF NOT EXISTS idx_ddjj_legajo_anio ON declaraciones_juradas(legajo_id, anio)")
-    cur.execute("CREATE INDEX IF NOT EXISTS idx_ddjj_codigo ON declaraciones_juradas(codigo_validacion)")
+    #cur.execute("CREATE INDEX IF NOT EXISTS idx_ddjj_codigo ON declaraciones_juradas(codigo_validacion)")
     
     logger.info("✅ Índices creados")
 
+def crear_indice_codigo_validacion():
+    """Crea el índice para codigo_validacion si no existe"""
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        
+        # Crear índice (no causa error si ya existe)
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_ddjj_codigo ON declaraciones_juradas(codigo_validacion)")
+        conn.commit()
+        conn.close()
+        print("✅ Índice idx_ddjj_codigo creado/verificado")
+        return True
+        
+    except Exception as e:
+        print(f"⚠️ Error creando índice: {e}")
+        return False
 
 # ==========================
 # RUTAS PRINCIPALES
