@@ -1,12 +1,8 @@
 """
 SISTEMA DE GESTIÓN DE LEGAJOS - ARCHIVO Y DECLARACIONES JURADAS
 VERSIÓN REALIZADA POR MIRIAN YOLANDA GONZALEZ
-CON MÓDULO DE FIRMA DIGITAL PKI
 """
 
-# ==========================
-# PRIMERO: TODOS LOS IMPORTS
-# ==========================
 import io
 import os
 import sys
@@ -25,13 +21,6 @@ import time
 import traceback
 import random
 import base64
-#import win32com.client  
-#import pythoncom
-#from win32com.client import constants
-#from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageBreak
-#from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from ac_interna import AutoridadCertificante
-from firma_pdf import firmar_pdf_digitalmente
 from functools import wraps
 from datetime import datetime, timedelta
 from io import BytesIO
@@ -43,41 +32,16 @@ from email import encoders
 from flask import Flask, flash, make_response, render_template, request, redirect, send_file, session, send_from_directory, url_for, g, jsonify
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
-#from dotenv import load_dotenv
 
 # ==========================
-# LIBRERÍAS PDF Y FIRMA DIGITAL
+# CREAR CARPETAS NECESARIAS (DEBE IR ANTES DEL LOGGING)
 # ==========================
-from reportlab.pdfgen import canvas
-#from reportlab.lib.pagesizes import legal, letter
-#from reportlab.lib.units import cm
-#from reportlab.lib import colors
-from pypdf import PdfReader, PdfWriter
-from pypdf.generic import DictionaryObject, NameObject, BooleanObject, TextStringObject, create_string_object
-from pypdf.annotations import Text
+carpetas_necesarias = ['LOGS', 'BACKUPS', 'DOCUMENTOS_AGENTES', 'qr_ddjj', 'CERTIFICADOS', 'plantillas']
 
-# Librerías para firma digital PKI
-#from cryptography.hazmat.primitives import hashes, serialization
-#from cryptography.hazmat.primitives.asymmetric import padding
-#from cryptography.hazmat.backends import default_backend
-#from cryptography.hazmat.primitives.serialization import pkcs12
-
-# ==========================
-# LIBRERÍAS DOCX
-# ==========================
-#from docxtpl import DocxTemplate, InlineImage
-#from docx2pdf import convert
-from docx.shared import Mm, Inches, Pt
-from docx import Document
-from docx.enum.text import WD_ALIGN_PARAGRAPH
-from PIL import Image, ImageDraw, ImageFont
-
-
-# ==========================
-# QR
-# ==========================
-#import qrcode
-
+for carpeta in carpetas_necesarias:
+    if not os.path.exists(carpeta):
+        os.makedirs(carpeta)
+        print(f"📁 Carpeta creada: {carpeta}")
 
 # ==========================
 # CONFIGURACIÓN DE LOGGING
@@ -95,16 +59,15 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # ==========================
-# IMPORTAR VARIABLES DE ENTORNO
+# IMPORTAR MÓDULOS LOCALES
 # ==========================
+from ac_interna import AutoridadCertificante
+from firma_pdf import firmar_pdf_digitalmente
 
-# Cargar variables del archivo .env
-#load_dotenv()
-
-# Detectar si estamos en Render (Linux) o local (Windows)
+# ==========================
+# DETECTAR ENTORNO
+# ==========================
 ENV_RENDER = os.environ.get('RENDER', False)
-
-# Variable global para saber si win32com está disponible
 WIN32_AVAILABLE = False
 
 if not ENV_RENDER:
@@ -115,29 +78,33 @@ if not ENV_RENDER:
         print("✅ win32com cargado (entorno Windows)")
     except ImportError:
         WIN32_AVAILABLE = False
-        print("⚠️ win32com no disponible - funciones de Office limitadas")
+        print("⚠️ win32com no disponible")
 else:
     print("🌐 Entorno Render - funciones de Office deshabilitadas")
 
-
 # ==========================
-# CONFIGURACIÓN FLASK
+# CONFIGURACIÓN DE LA APP
 # ==========================
 app = Flask(__name__,
             static_folder='static',
             static_url_path='/static')
-
-# Usar variable de entorno para SECRET_KEY
-app.secret_key = os.getenv('SECRET_KEY', 'MI_CLAVE_SECRETA_SUPER_SEGURA_2026_MIRIAN')
-
-# Configuración de sesión
-app.config['SESSION_COOKIE_NAME'] = 'rrhh_session'
-app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['SESSION_COOKIE_SECURE'] = False
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.secret_key = os.environ.get('SECRET_KEY', 'clave_secreta_para_desarrollo')
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=8)
-app.config['SESSION_REFRESH_EACH_REQUEST'] = True
 
+# Configuración de rutas
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(BASE_DIR, 'legajos_agentes.db')
+DOCUMENTOS_DIR = os.path.join(BASE_DIR, 'DOCUMENTOS_AGENTES')
+PLANTILLAS_DIR = os.path.join(BASE_DIR, 'plantillas')
+QR_DIR = os.path.join(BASE_DIR, 'qr_ddjj')
+BACKUP_DIR = os.path.join(BASE_DIR, 'BACKUPS')
+LOG_DIR = os.path.join(BASE_DIR, 'LOGS')
+CERTIFICADOS_DIR = os.path.join(BASE_DIR, 'CERTIFICADOS')
+
+# Asegurar que existan los directorios
+for dir_path in [DOCUMENTOS_DIR, PLANTILLAS_DIR, QR_DIR, BACKUP_DIR, LOG_DIR, CERTIFICADOS_DIR]:
+    if not os.path.exists(dir_path):
+        os.makedirs(dir_path)
 
 
 # ==========================
