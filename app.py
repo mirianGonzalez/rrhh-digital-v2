@@ -21,6 +21,7 @@ import time
 import traceback
 import random
 import base64
+import zipfile
 from functools import wraps
 from datetime import datetime, timedelta
 from io import BytesIO
@@ -28,6 +29,8 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email import encoders
+
+from datetime import datetime
 
 from flask import Flask, flash, make_response, render_template, request, redirect, send_file, session, send_from_directory, url_for, g, jsonify
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -2674,7 +2677,6 @@ def mapear_datos_para_plantilla(legajo, datos, familiares, padres, conyuge, ddjj
     """
     import hashlib
     import uuid
-    from datetime import datetime
     
     contexto = {}
     
@@ -4630,6 +4632,163 @@ def _convertir_docx_con_libreoffice(docx_path, pdf_path):
     except Exception as e:
         print(f"❌ Error conversión LibreOffice: {e}")
         return False
+
+# ==========================
+# FUNCIONES DE RESPALDO AUTOMÁTICO
+# ==========================
+
+def crear_respaldo_manual():
+    """Crea un respaldo manual de la base de datos"""
+    try:
+        
+        # Crear carpeta de respaldos si no existe
+        backup_dir = os.path.join(BASE_DIR, 'BACKUPS')
+        if not os.path.exists(backup_dir):
+            os.makedirs(backup_dir)
+            print(f"📁 Carpeta de respaldos creada: {backup_dir}")
+        
+        # Nombre del respaldo con timestamp
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        backup_file = os.path.join(backup_dir, f'backup_{timestamp}.zip')
+        
+        # Archivos a respaldar
+        archivos_a_respaldar = []
+        
+        # Base de datos
+        if os.path.exists(DB_PATH):
+            archivos_a_respaldar.append(DB_PATH)
+            print(f"📦 Respaldando base de datos: {DB_PATH}")
+        
+        # Documentos importantes (opcional, comenta si quieres incluir documentos)
+        # if os.path.exists(DOCUMENTOS_DIR):
+        #     archivos_a_respaldar.append(DOCUMENTOS_DIR)
+        
+        if not archivos_a_respaldar:
+            print("⚠️ No hay archivos para respaldar")
+            return None
+        
+        # Crear ZIP
+        with zipfile.ZipFile(backup_file, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            for archivo in archivos_a_respaldar:
+                if os.path.isfile(archivo):
+                    zipf.write(archivo, os.path.basename(archivo))
+                elif os.path.isdir(archivo):
+                    for root, dirs, files in os.walk(archivo):
+                        for file in files:
+                            file_path = os.path.join(root, file)
+                            arcname = os.path.relpath(file_path, os.path.dirname(archivo))
+                            zipf.write(file_path, arcname)
+        
+        # Mantener solo los últimos 10 respaldos
+        backups = sorted([f for f in os.listdir(backup_dir) if f.startswith('backup_') and f.endswith('.zip')])
+        while len(backups) > 10:
+            archivo_antiguo = os.path.join(backup_dir, backups.pop(0))
+            os.remove(archivo_antiguo)
+            print(f"🗑️ Respaldo antiguo eliminado: {archivo_antiguo}")
+        
+        print(f"✅ Respaldo creado: {backup_file}")
+        logger.info(f"✅ Respaldo automático creado: {backup_file}")
+        return backup_file
+        
+    except Exception as e:
+        print(f"❌ Error en respaldo: {e}")
+        logger.error(f"❌ Error en respaldo: {e}")
+        return None
+
+def restaurar_respaldo(archivo_respaldo):
+    """Restaura un respaldo (solo para uso administrativo)"""
+    try:
+        
+        if not os.path.exists(archivo_respaldo):
+            return False, "Archivo de respaldo no encontrado"
+        
+        # Crear backup de la base actual antes de restaurar
+        crear_respaldo_manual()
+        
+        # Restaurar
+        with zipfile.ZipFile(archivo_respaldo, 'r') as zipf:
+            zipf.extractall(BASE_DIR)
+        
+        return True, "Respaldo restaurado correctamente"
+        
+    except Exception as e:
+        return False, f"Error al restaurar: {e}"
+
+# Programar respaldo automático cada hora
+import schedule
+import threading
+
+def ejecutar_respaldo_programado():
+    """Ejecuta el respaldo programado"""
+    while True:
+        schedule.run_pending()
+        time.sleep(60)
+
+# Programar respaldo cada hora
+schedule.every(1).hours.do(crear_respaldo_manual)
+
+# Iniciar el hilo de respaldos automáticos
+hilo_respaldos = threading.Thread(target=ejecutar_respaldo_programado, daemon=True)
+hilo_respaldos.start()
+
+print("✅ Respaldo automático programado cada hora")
+logger.info("✅ Respaldo automático programado cada hora")
+
+@app.route('/admin/respaldos')
+@login_required
+def listar_respaldos():
+    """Lista los respaldos disponibles (solo admin)"""
+    if session.get('rol') != 'ADMIN':
+        flash('Acceso denegado', 'danger')
+        return redirect(url_for('panel'))
+    
+    backup_dir = os.path.join(BASE_DIR, 'BACKUPS')
+    respaldos = []
+    
+    if os.path.exists(backup_dir):
+        for archivo in os.listdir(backup_dir):
+            if archivo.startswith('backup_') and archivo.endswith('.zip'):
+                ruta = os.path.join(backup_dir, archivo)
+                respaldos.append({
+                    'nombre': archivo,
+                    'fecha': datetime.fromtimestamp(os.path.getctime(ruta)).strftime('%Y-%m-%d %H:%M:%S'),
+                    'tamano': f"{os.path.getsize(ruta) / 1024:.2f} KB"
+                })
+    
+    respaldos.sort(key=lambda x: x['fecha'], reverse=True)
+    return render_template('respaldos.html', respaldos=respaldos)
+
+@app.route('/admin/respaldos/download/<nombre>')
+@login_required
+def descargar_respaldo(nombre):
+    """Descarga un respaldo"""
+    if session.get('rol') != 'ADMIN':
+        flash('Acceso denegado', 'danger')
+        return redirect(url_for('panel'))
+    
+    backup_dir = os.path.join(BASE_DIR, 'BACKUPS')
+    ruta = os.path.join(backup_dir, nombre)
+    
+    if os.path.exists(ruta):
+        return send_file(ruta, as_attachment=True, download_name=nombre)
+    else:
+        flash('Archivo no encontrado', 'danger')
+        return redirect(url_for('listar_respaldos'))
+
+@app.route('/admin/respaldos/crear', methods=['POST'])
+@login_required
+def crear_respaldo():
+    """Crea un respaldo manual"""
+    if session.get('rol') != 'ADMIN':
+        return jsonify({'error': 'Acceso denegado'}), 403
+    
+    archivo = crear_respaldo_manual()
+    if archivo:
+        return jsonify({'success': True, 'archivo': archivo})
+    else:
+        return jsonify({'success': False, 'error': 'Error al crear respaldo'}), 500
+
+
 
 # ==========================
 # INICIALIZACIÓN Y EJECUCIÓN
