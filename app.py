@@ -3,6 +3,7 @@ SISTEMA DE GESTIÓN DE LEGAJOS - ARCHIVO Y DECLARACIONES JURADAS
 VERSIÓN REALIZADA POR MIRIAN YOLANDA GONZALEZ
 """
 
+
 import io
 import os
 import sys
@@ -15,13 +16,10 @@ import subprocess
 import tempfile
 import logging
 import smtplib
-import schedule
-import threading
 import time
 import traceback
 import random
 import base64
-import zipfile
 from functools import wraps
 from datetime import datetime, timedelta
 from io import BytesIO
@@ -30,11 +28,21 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email import encoders
 
-from datetime import datetime
-
 from flask import Flask, flash, make_response, render_template, request, redirect, send_file, session, send_from_directory, url_for, g, jsonify
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
+
+
+
+# Decorador para requerir login
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            flash('Por favor, inicia sesión para acceder a esta página', 'warning')
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 # ==========================
 # CREAR CARPETAS NECESARIAS (DEBE IR ANTES DEL LOGGING)
@@ -524,92 +532,47 @@ def generar_pdf_simple(ddjj_id, legajo, datos, familiares, padres, conyuge, cont
 
 
 # ==========================
-# FUNCIÓN DE BACKUP AUTOMÁTICO
+# RESPALDOS MANUALES (SIN HILOS)
 # ==========================
+
 def crear_backup():
-    """Crea backup completo del sistema"""
+    """Crea un backup manual de la base de datos"""
     try:
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        backup_dir = os.path.join(BACKUP_PATH, f"backup_{timestamp}")
-        os.makedirs(backup_dir, exist_ok=True)
+        backup_dir = os.path.join(BASE_DIR, 'BACKUPS')
+        if not os.path.exists(backup_dir):
+            os.makedirs(backup_dir)
         
-        # 1. Backup de la base de datos
-        if os.path.exists(DB_PATH):
-            shutil.copy2(DB_PATH, os.path.join(backup_dir, "legajos_agentes.db"))
-            logger.info(f"✅ Base de datos respaldada")
-        else:
-            logger.warning(f"⚠️ Base de datos no encontrada en: {DB_PATH}")
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        backup_file = os.path.join(backup_dir, f'backup_{timestamp}.zip')
         
-        # 2. Backup de metadatos de documentos
-        try:
-            conn = sqlite3.connect(DB_PATH)
-            conn.row_factory = sqlite3.Row  # Para acceder por nombre de columna
-            cur = conn.cursor()
-            
-            # Verificar si la tabla documentos existe
-            cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='documentos'")
-            if cur.fetchone():
-                cur.execute("SELECT * FROM documentos")
-                documentos = cur.fetchall()
-                
-                # Convertir a diccionario de manera segura
-                documentos_lista = []
-                for doc in documentos:
-                    try:
-                        # Convertir Row a dict
-                        doc_dict = {key: doc[key] for key in doc.keys()}
-                        documentos_lista.append(doc_dict)
-                    except Exception as e:
-                        logger.warning(f"Error procesando documento: {e}")
-                        continue
-                
-                # Guardar metadata
-                if documentos_lista:
-                    with open(os.path.join(backup_dir, "documentos_metadata.json"), 'w', encoding='utf-8') as f:
-                        json.dump(documentos_lista, f, indent=2, default=str, ensure_ascii=False)
-                    logger.info(f"✅ Metadata de {len(documentos_lista)} documentos respaldada")
-                else:
-                    # Guardar lista vacía si no hay documentos
-                    with open(os.path.join(backup_dir, "documentos_metadata.json"), 'w', encoding='utf-8') as f:
-                        json.dump([], f, indent=2)
-                    logger.info("✅ Metadata de documentos respaldada (vacía)")
-            else:
-                logger.info("ℹ️ Tabla 'documentos' no existe, omitiendo metadata")
-            
-            conn.close()
-            
-        except sqlite3.Error as e:
-            logger.error(f"Error en base de datos durante backup: {e}")
-            # Continuar aunque falle la metadata, la BD ya está respaldada
+        with zipfile.ZipFile(backup_file, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            if os.path.exists(DB_PATH):
+                zipf.write(DB_PATH, os.path.basename(DB_PATH))
         
-        # 3. Crear archivo ZIP
-        try:
-            zip_path = shutil.make_archive(
-                os.path.join(BACKUP_PATH, f"backup_{timestamp}"), 
-                'zip', 
-                backup_dir
-            )
-            logger.info(f"✅ Backup creado exitosamente: {os.path.basename(zip_path)}")
-        except Exception as e:
-            logger.error(f"Error creando ZIP: {e}")
-            return None
+        # Mantener solo los últimos 10 backups
+        backups = sorted([f for f in os.listdir(backup_dir) if f.startswith('backup_')])
+        while len(backups) > 10:
+            os.remove(os.path.join(backup_dir, backups.pop(0)))
         
-        # 4. Limpiar directorio temporal
-        try:
-            shutil.rmtree(backup_dir)
-        except Exception as e:
-            logger.warning(f"No se pudo eliminar directorio temporal: {e}")
-        
-        # 5. Limpiar backups antiguos
-        limpiar_backups_viejos()
-        
-        return f"backup_{timestamp}.zip"
+        print(f"✅ Backup creado: {backup_file}")
+        return backup_file
         
     except Exception as e:
-        logger.error(f"❌ Error en backup: {str(e)}")
-        
-        logger.error(traceback.format_exc())
+        print(f"❌ Error en backup: {e}")
         return None
+
+# Crear backup inicial (solo una vez al arrancar)
+try:
+    backup_dir = os.path.join(BASE_DIR, 'BACKUPS')
+    if os.path.exists(backup_dir):
+        backups = [f for f in os.listdir(backup_dir) if f.startswith('backup_')]
+        if not backups:
+            crear_backup()
+            print("📦 Backup inicial creado")
+except Exception as e:
+    print(f"⚠️ Error: {e}")
+
+
 
 def limpiar_backups_viejos():
     """Mantiene solo los últimos 10 backups"""
@@ -699,47 +662,7 @@ def alerta_ddjj_pendiente(legajo_id, email_agente):
     """
     return enviar_alerta_email(email_agente, asunto, mensaje)
 
-# ==========================
-# HILO PARA ALERTAS AUTOMÁTICAS
-# ==========================
-def ejecutar_alertas():
-    """Ejecuta alertas programadas"""
-    while True:
-        try:
-            schedule.run_pending()
-            time.sleep(60)
-        except Exception as e:
-            logger.error(f"Error en hilo de alertas: {e}")
 
-def programar_alertas():
-    """Programa las alertas automáticas"""
-    try:
-        schedule.clear()
-        
-        # Verificar DDJJ pendientes una vez al día
-        schedule.every().day.at("09:00").do(verificar_ddjj_pendientes)
-        
-        # Backup UNA VEZ al día (no cada hora)
-        schedule.every().day.at("23:00").do(crear_backup)
-        
-        # Opcional: limpiar backups viejos una vez por semana
-        schedule.every().monday.at("00:30").do(limpiar_backups_viejos)
-        
-        logger.info("✅ Alertas programadas:")
-        logger.info("   - 09:00: Verificación de DDJJ pendientes")
-        logger.info("   - 23:00: Backup automático diario")
-        logger.info("   - Lunes 00:30: Limpieza de backups antiguos")
-        
-    except Exception as e:
-        logger.error(f"❌ Error programando alertas: {e}")
-
-def ejecutar_alertas():
-    while True:
-        try:
-            schedule.run_pending()
-            time.sleep(60)
-        except Exception as e:
-            logger.error(f"Error en hilo alertas: {e}")
 
 def verificar_ddjj_pendientes():
     """Verifica agentes con DDJJ pendiente y envía alertas"""
@@ -1494,6 +1417,21 @@ def generar_ddjj_con_firma(legajo_id, ddjj_id, pin_agente):
 @app.before_first_request
 def inicializar_sistema():
     init_db()
+
+
+@app.route('/admin/backup/crear', methods=['POST'])
+@login_required
+def crear_backup_manual():
+    """Crea un backup manual desde el panel"""
+    if session.get('rol') != 'ADMIN':
+        return jsonify({'error': 'Acceso denegado'}), 403
+    
+    archivo = crear_backup()
+    if archivo:
+        return jsonify({'success': True, 'archivo': os.path.basename(archivo)})
+    else:
+        return jsonify({'success': False, 'error': 'Error al crear backup'}), 500
+
 
 # ==========================
 # RUTAS DE FIRMA DIGITAL
@@ -4714,18 +4652,10 @@ def restaurar_respaldo(archivo_respaldo):
     except Exception as e:
         return False, f"Error al restaurar: {e}"
 
-# Programar respaldo automático cada hora
-import schedule
-import threading
 
-def ejecutar_respaldo_programado():
-    """Ejecuta el respaldo programado"""
-    while True:
-        schedule.run_pending()
-        time.sleep(60)
 
 # Programar respaldo cada hora
-sch# ==========================
+# ==========================
 # INICIALIZACIÓN DE RESPALDOS (COMPATIBLE CON GUNICORN)
 # ==========================
 
@@ -4760,7 +4690,7 @@ def backup_manual():
         return jsonify({'success': True, 'archivo': os.path.basename(archivo)})
     else:
         return jsonify({'success': False, 'error': 'Error al crear respaldo'}), 500
-        
+
 
 @app.route('/admin/respaldos')
 @login_required
@@ -4837,7 +4767,6 @@ if __name__ == "__main__":
     # Alertas en hilo separado
     try:
         programar_alertas()
-        hilo_alertas = threading.Thread(target=ejecutar_alertas, daemon=True)
         hilo_alertas.start()
     except Exception as e:
         print("Error en alertas:", e)
