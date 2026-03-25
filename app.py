@@ -838,6 +838,51 @@ def _convertir_con_libreoffice(archivo_entrada, nombre_salida):
         print(f"❌ Error conversión LibreOffice: {e}")
         return None
 
+def agregar_columnas_faltantes():
+    """Agrega columnas faltantes a la tabla legajos"""
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        
+        # Obtener columnas actuales
+        cur.execute("PRAGMA table_info(legajos)")
+        columnas = [col[1] for col in cur.fetchall()]
+        
+        # Columnas que deben existir
+        columnas_necesarias = [
+            'lugar_nacimiento',
+            'telefono_fijo',
+            'telefono_referencia',
+            'parentesco_referencia',
+            'domicilio_piso',
+            'domicilio_depto',
+            'domicilio_barrio',
+            'croquis_domicilio',
+            'foto_path',
+            'tipo_personal',
+            'antiguedad',
+            'lugar_desempeno',
+            'obra_social'
+        ]
+        
+        # Agregar columnas faltantes
+        for columna in columnas_necesarias:
+            if columna not in columnas:
+                try:
+                    cur.execute(f"ALTER TABLE legajos ADD COLUMN {columna} TEXT")
+                    print(f"✅ Columna agregada: {columna}")
+                except Exception as e:
+                    print(f"⚠️ Error al agregar {columna}: {e}")
+        
+        conn.commit()
+        conn.close()
+        print("✅ Migración completada")
+        
+    except Exception as e:
+        print(f"❌ Error en migración: {e}")
+
+
+
 def generar_pdf_con_reportlab(ddjj_id, legajo, datos, familiares, padres, conyuge, contexto, codigo_validacion):
     """Genera PDF directamente con ReportLab sin usar Word"""
 
@@ -989,6 +1034,62 @@ def crear_plantilla_oficial():
         
         doc.save(plantilla_path)
         logger.info("Plantilla oficial creada")
+
+# ==========================
+# FUNCIÓN DE MIGRACIÓN DE COLUMNAS
+# ==========================
+def agregar_columnas_faltantes():
+    """Agrega columnas faltantes a la tabla legajos"""
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        
+        # Obtener columnas actuales
+        cur.execute("PRAGMA table_info(legajos)")
+        columnas = [col[1] for col in cur.fetchall()]
+        
+        # Columnas que deben existir
+        columnas_necesarias = [
+            'lugar_nacimiento',
+            'telefono_fijo',
+            'telefono_referencia',
+            'parentesco_referencia',
+            'domicilio_piso',
+            'domicilio_depto',
+            'domicilio_barrio',
+            'croquis_domicilio',
+            'foto_path',
+            'tipo_personal',
+            'antiguedad',
+            'lugar_desempeno',
+            'obra_social'
+        ]
+        
+        # Agregar columnas faltantes
+        columnas_agregadas = []
+        for columna in columnas_necesarias:
+            if columna not in columnas:
+                try:
+                    cur.execute(f"ALTER TABLE legajos ADD COLUMN {columna} TEXT")
+                    columnas_agregadas.append(columna)
+                    print(f"✅ Columna agregada: {columna}")
+                except Exception as e:
+                    print(f"⚠️ Error al agregar {columna}: {e}")
+        
+        conn.commit()
+        conn.close()
+        
+        if columnas_agregadas:
+            print(f"📦 Columnas agregadas: {', '.join(columnas_agregadas)}")
+        else:
+            print("ℹ️ Todas las columnas ya existen")
+        
+        return True
+        
+    except Exception as e:
+        print(f"❌ Error en migración: {e}")
+        return False
+
 
 # ==========================
 # INICIALIZACIÓN DE BASE DE DATOS
@@ -1255,17 +1356,31 @@ def init_db():
 
         print("✅ Base de datos inicializada correctamente")
 
-        # Migrar estructura de legajos si es necesario
-        try:
-            migrar_legajos_estructura_completa()
-        except Exception as e:
-            print(f"⚠️ Error en migración: {e}")
-
     except Exception as e:
         print("❌ Error inicializando DB:", e)
         import traceback
         traceback.print_exc()
-        
+
+
+# ==========================
+# LLAMAR A LAS MIGRACIONES DESPUÉS DE INIT_DB
+# ==========================
+def inicializar_sistema():
+    """Inicializa el sistema completo"""
+    init_db()
+    
+    # Agregar columnas faltantes después de init_db
+    try:
+        agregar_columnas_faltantes()
+    except Exception as e:
+        print(f"⚠️ Error en migración de columnas: {e}")
+    
+    print("✅ Sistema inicializado correctamente")
+
+
+# Llamar a la función de inicialización
+inicializar_sistema()
+
 
 def migrar_legajos_estructura_completa():
     """Migra la tabla legajos a la estructura completa"""
