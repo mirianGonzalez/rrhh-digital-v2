@@ -3,7 +3,9 @@ SISTEMA DE GESTIÓN DE LEGAJOS - ARCHIVO Y DECLARACIONES JURADAS
 VERSIÓN REALIZADA POR MIRIAN YOLANDA GONZALEZ
 """
 
-
+# ==========================
+# IMPORTS PRINCIPALES
+# ==========================
 import io
 import os
 import sys
@@ -20,6 +22,7 @@ import time
 import traceback
 import random
 import base64
+import zipfile
 from functools import wraps
 from datetime import datetime, timedelta
 from io import BytesIO
@@ -31,6 +34,7 @@ from email import encoders
 from flask import Flask, flash, make_response, render_template, request, redirect, send_file, session, send_from_directory, url_for, g, jsonify
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
+
 
 
 
@@ -1356,32 +1360,6 @@ def init_db():
         traceback.print_exc()
 
 
-# ==========================
-# LLAMAR A LAS MIGRACIONES DESPUÉS DE INIT_DB
-# ==========================
-def inicializar_sistema():
-    """Inicializa el sistema completo"""
-    init_db()
-    
-    # Agregar columnas faltantes a legajos
-    try:
-        agregar_columnas_faltantes()
-    except Exception as e:
-        print(f"⚠️ Error en migración de columnas: {e}")
-    
-    # Crear índice para código de validación
-    try:
-        crear_indice_codigo_validacion()
-    except Exception as e:
-        print(f"⚠️ Error creando índice: {e}")
-    
-    print("✅ Sistema inicializado correctamente")
-
-
-# Llamar a la función de inicialización
-inicializar_sistema()
-
-
 def migrar_legajos_estructura_completa():
     """Migra la tabla legajos a la estructura completa"""
     try:
@@ -1850,26 +1828,6 @@ def generar_ddjj_con_firma(legajo_id, ddjj_id, pin_agente):
     except Exception as e:
         logger.error(f"Error generando DDJJ con firma: {e}")
         return None, f"Error: {str(e)}"
-
-
-@app.before_first_request
-def inicializar_sistema():
-    """Inicializa el sistema completo"""
-    init_db()
-    
-    # Agregar columnas faltantes a legajos
-    try:
-        agregar_columnas_faltantes()
-    except Exception as e:
-        print(f"⚠️ Error en migración de columnas: {e}")
-    
-    # Crear índice para codigo_validacion
-    try:
-        crear_indice_codigo_validacion()
-    except Exception as e:
-        print(f"⚠️ Error creando índice: {e}")
-    
-    print("✅ Sistema inicializado correctamente")
 
 
 
@@ -5217,30 +5175,470 @@ def crear_respaldo():
         return jsonify({'success': False, 'error': 'Error al crear respaldo'}), 500
 
 
+# ==========================
+# INICIALIZACIÓN DEL SISTEMA
+# ==========================
+def inicializar_sistema():
+    """Inicializa el sistema completo"""
+    print("🔧 Inicializando sistema...")
+    
+    # Crear directorios si no existen
+    os.makedirs('LOGS', exist_ok=True)
+    os.makedirs('BACKUPS', exist_ok=True)
+    os.makedirs('DOCUMENTOS_AGENTES', exist_ok=True)
+    os.makedirs('qr_ddjj', exist_ok=True)
+    os.makedirs('CERTIFICADOS', exist_ok=True)
+    os.makedirs('plantillas', exist_ok=True)
+    
+    # Inicializar base de datos
+    try:
+        init_db()
+    except Exception as e:
+        print(f"⚠️ Error en init_db: {e}")
+    
+    # Agregar columnas faltantes
+    try:
+        agregar_columnas_faltantes()
+    except Exception as e:
+        print(f"⚠️ Error en migración de columnas: {e}")
+    
+    # Crear índice
+    try:
+        crear_indice_codigo_validacion()
+    except Exception as e:
+        print(f"⚠️ Error creando índice: {e}")
+    
+    print("✅ Sistema inicializado correctamente")  # <--- PARÉNTESIS CERRADO
+
+
 
 # ==========================
-# INICIALIZACIÓN Y EJECUCIÓN
+# INICIAR EL SISTEMA (UNA SOLA VEZ)
+# ==========================
+# Esta línea ejecuta la inicialización cuando la app es importada
+inicializar_sistema()
+
+# ==========================
+# SISTEMA DE ALERTAS Y NOTIFICACIONES (SIN SCHEDULE)
+# ==========================
+
+# Configuración de email (para producción, usar variables de entorno)
+EMAIL_CONFIG = {
+    'smtp_server': os.environ.get('SMTP_SERVER', 'smtp.gmail.com'),
+    'smtp_port': int(os.environ.get('SMTP_PORT', 587)),
+    'email_remitente': os.environ.get('EMAIL_REMITENTE', ''),
+    'email_password': os.environ.get('EMAIL_PASSWORD', ''),
+    'email_director': os.environ.get('EMAIL_DIRECTOR', 'director@rrhh.com'),
+    'email_admin': os.environ.get('EMAIL_ADMIN', 'admin@rrhh.com')
+}
+
+
+def enviar_email_notificacion(destinatario, asunto, cuerpo, html=False):
+    """Envía email de notificación"""
+    try:
+        if not EMAIL_CONFIG['email_remitente'] or not EMAIL_CONFIG['email_password']:
+            print("⚠️ Email no configurado. Omitiendo envío.")
+            return False
+        
+        msg = MIMEMultipart()
+        msg['From'] = EMAIL_CONFIG['email_remitente']
+        msg['To'] = destinatario
+        msg['Subject'] = asunto
+        
+        if html:
+            msg.attach(MIMEText(cuerpo, 'html'))
+        else:
+            msg.attach(MIMEText(cuerpo, 'plain'))
+        
+        with smtplib.SMTP(EMAIL_CONFIG['smtp_server'], EMAIL_CONFIG['smtp_port']) as server:
+            server.starttls()
+            server.login(EMAIL_CONFIG['email_remitente'], EMAIL_CONFIG['email_password'])
+            server.send_message(msg)
+        
+        print(f"✅ Email enviado a {destinatario}")
+        return True
+        
+    except Exception as e:
+        print(f"❌ Error enviando email: {e}")
+        return False
+
+
+def notificar_cofirma_pendiente(legajo_id, apellido, nombre, ddjj_id):
+    """Notifica al director que hay una DDJJ pendiente de co-firma"""
+    asunto = f"🔔 DDJJ Pendiente de Co-Firma - Legajo {legajo_id}"
+    
+    cuerpo_html = f"""
+    <html>
+    <body>
+        <h2>Declaración Jurada Pendiente de Co-Firma</h2>
+        <p>El agente <strong>{apellido}, {nombre}</strong> (Legajo {legajo_id}) 
+        ha firmado su Declaración Jurada y espera su co-firma.</p>
+        
+        <p><strong>Detalles:</strong><br>
+        - DDJJ ID: {ddjj_id}<br>
+        - Legajo: {legajo_id}<br>
+        - Agente: {apellido}, {nombre}<br>
+        - Estado: FIRMADA_AGENTE</p>
+        
+        <p>Por favor, ingrese al sistema para co-firmar la DDJJ:</p>
+        <p><a href="https://rrhh-digital-v2.onrender.com/ddjj/{ddjj_id}/cofirmar_director">
+        https://rrhh-digital-v2.onrender.com/ddjj/{ddjj_id}/cofirmar_director</a></p>
+        
+        <hr>
+        <p><small>Sistema de Gestión de Legajos - Notificación automática</small></p>
+    </body>
+    </html>
+    """
+    
+    return enviar_email_notificacion(
+        EMAIL_CONFIG['email_director'],
+        asunto,
+        cuerpo_html,
+        html=True
+    )
+
+
+def notificar_firma_completa(legajo_id, apellido, nombre, ddjj_id, email_agente):
+    """Notifica al agente que su DDJJ fue co-firmada"""
+    asunto = f"✅ DDJJ Completada - Legajo {legajo_id}"
+    
+    cuerpo_html = f"""
+    <html>
+    <body>
+        <h2>Declaración Jurada Completada</h2>
+        <p>Estimado/a <strong>{apellido}, {nombre}</strong>,</p>
+        
+        <p>Su Declaración Jurada correspondiente al año en curso ha sido 
+        <strong>co-firmada por el Director</strong> y se encuentra finalizada.</p>
+        
+        <p><strong>Detalles:</strong><br>
+        - DDJJ ID: {ddjj_id}<br>
+        - Legajo: {legajo_id}<br>
+        - Estado: FINALIZADA</p>
+        
+        <p>Puede descargar el PDF firmado desde el sistema:</p>
+        <p><a href="https://rrhh-digital-v2.onrender.com/ddjj/{ddjj_id}/pdf">
+        https://rrhh-digital-v2.onrender.com/ddjj/{ddjj_id}/pdf</a></p>
+        
+        <hr>
+        <p><small>Sistema de Gestión de Legajos - Notificación automática</small></p>
+    </body>
+    </html>
+    """
+    
+    return enviar_email_notificacion(
+        email_agente,
+        asunto,
+        cuerpo_html,
+        html=True
+    )
+
+
+def verificar_ddjj_pendientes_firma():
+    """Verifica DDJJ que esperan co-firma del director y envía email"""
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        
+        # DDJJ firmadas por agente que esperan co-firma
+        cur.execute("""
+            SELECT d.id, d.legajo_id, l.apellido, l.nombre, l.email, d.fecha_generacion
+            FROM declaraciones_juradas d
+            JOIN legajos l ON d.legajo_id = l.legajo_id
+            WHERE d.estado = 'FIRMADA_AGENTE' 
+            AND d.activa = 1
+            AND (d.notificado_cofirma IS NULL OR d.notificado_cofirma = 0)
+        """)
+        
+        pendientes = cur.fetchall()
+        
+        if pendientes:
+            print(f"📋 {len(pendientes)} DDJJ pendientes de co-firma")
+            
+            for p in pendientes:
+                ddjj_id, legajo_id, apellido, nombre, email, fecha = p
+                
+                notificar_cofirma_pendiente(legajo_id, apellido, nombre, ddjj_id)
+                
+                cur.execute("""
+                    UPDATE declaraciones_juradas 
+                    SET notificado_cofirma = 1 
+                    WHERE id = ?
+                """, (ddjj_id,))
+                
+                print(f"   - Legajo {legajo_id}: {apellido}, {nombre} (email enviado)")
+            
+            conn.commit()
+        
+        conn.close()
+        return len(pendientes)
+        
+    except Exception as e:
+        print(f"⚠️ Error verificando DDJJ pendientes: {e}")
+        return 0
+
+
+def verificar_ddjj_por_vencer():
+    """Verifica DDJJ que están por vencer"""
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        
+        # DDJJ que están por vencer (a 30 días de cumplir un año)
+        cur.execute("""
+            SELECT d.id, d.legajo_id, l.apellido, l.nombre, l.email, d.anio, d.fecha_envio
+            FROM declaraciones_juradas d
+            JOIN legajos l ON d.legajo_id = l.legajo_id
+            WHERE d.estado = 'FINALIZADA'
+            AND d.activa = 1
+            AND date(d.fecha_envio) >= date('now', '-330 days')
+            AND (d.notificado_vencimiento IS NULL OR d.notificado_vencimiento = 0)
+        """)
+        
+        por_vencer = cur.fetchall()
+        
+        if por_vencer:
+            print(f"⚠️ {len(por_vencer)} DDJJ próximas a vencer")
+            
+            for p in por_vencer:
+                ddjj_id, legajo_id, apellido, nombre, email, anio, fecha = p
+                
+                asunto = f"⚠️ Recordatorio: DDJJ {anio} próxima a vencer"
+                cuerpo = f"""
+Estimado/a {apellido}, {nombre}:
+
+Su Declaración Jurada del año {anio} está próxima a vencer.
+Por favor, genere una nueva DDJJ en el sistema.
+
+Legajo: {legajo_id}
+Fecha de presentación: {fecha}
+
+Ingrese al sistema: https://rrhh-digital-v2.onrender.com
+
+--
+Sistema de Gestión de Legajos
+"""
+                
+                enviar_email_notificacion(email, asunto, cuerpo)
+                
+                cur.execute("""
+                    UPDATE declaraciones_juradas 
+                    SET notificado_vencimiento = 1 
+                    WHERE id = ?
+                """, (ddjj_id,))
+                
+                print(f"   - Legajo {legajo_id}: {apellido}, {nombre} (recordatorio enviado)")
+            
+            conn.commit()
+        
+        conn.close()
+        return len(por_vencer)
+        
+    except Exception as e:
+        print(f"⚠️ Error verificando DDJJ por vencer: {e}")
+        return 0
+
+
+def crear_backup_automatico():
+    """Crea un backup automático programado"""
+    try:
+        backup_dir = os.path.join(BASE_DIR, 'BACKUPS')
+        if not os.path.exists(backup_dir):
+            os.makedirs(backup_dir)
+        
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        backup_file = os.path.join(backup_dir, f'backup_auto_{timestamp}.zip')
+        
+        with zipfile.ZipFile(backup_file, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            if os.path.exists(DB_PATH):
+                zipf.write(DB_PATH, os.path.basename(DB_PATH))
+        
+        # Mantener solo últimos 10 backups automáticos
+        backups = sorted([f for f in os.listdir(backup_dir) if f.startswith('backup_auto_')])
+        while len(backups) > 10:
+            os.remove(os.path.join(backup_dir, backups.pop(0)))
+        
+        print(f"✅ Backup automático creado: {backup_file}")
+        return backup_file
+        
+    except Exception as e:
+        print(f"❌ Error en backup automático: {e}")
+        return None
+
+
+def agregar_columnas_notificaciones():
+    """Agrega columnas para control de notificaciones en declaraciones_juradas"""
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        
+        cur.execute("PRAGMA table_info(declaraciones_juradas)")
+        columnas = [col[1] for col in cur.fetchall()]
+        
+        if 'notificado_cofirma' not in columnas:
+            cur.execute("ALTER TABLE declaraciones_juradas ADD COLUMN notificado_cofirma INTEGER DEFAULT 0")
+            print("✅ Columna notificado_cofirma agregada")
+        
+        if 'notificado_vencimiento' not in columnas:
+            cur.execute("ALTER TABLE declaraciones_juradas ADD COLUMN notificado_vencimiento INTEGER DEFAULT 0")
+            print("✅ Columna notificado_vencimiento agregada")
+        
+        conn.commit()
+        conn.close()
+        
+    except Exception as e:
+        print(f"⚠️ Error agregando columnas de notificaciones: {e}")
+
+
+# ==========================
+# ENDPOINTS PARA ALERTAS (USAR CON GITHUB ACTIONS)
+# ==========================
+
+@app.route('/api/alertas/ddjj_pendientes', methods=['POST'])
+def api_alertas_ddjj_pendientes():
+    """Endpoint para verificar DDJJ pendientes (usar con cron)"""
+    try:
+        cantidad = verificar_ddjj_pendientes_firma()
+        return jsonify({'success': True, 'pendientes': cantidad})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/alertas/ddjj_vencer', methods=['POST'])
+def api_alertas_ddjj_vencer():
+    """Endpoint para verificar DDJJ por vencer (usar con cron)"""
+    try:
+        cantidad = verificar_ddjj_por_vencer()
+        return jsonify({'success': True, 'por_vencer': cantidad})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/alertas/backup', methods=['POST'])
+def api_alertas_backup():
+    """Endpoint para crear backup automático"""
+    try:
+        archivo = crear_backup_automatico()
+        return jsonify({'success': True, 'archivo': archivo})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/admin/alertas/ejecutar', methods=['POST'])
+@login_requerido
+def ejecutar_alertas_manual():
+    """Ejecuta todas las alertas manualmente (solo admin)"""
+    if session.get('rol') != 'ADMIN':
+        return jsonify({'error': 'Acceso denegado'}), 403
+    
+    resultados = {
+        'ddjj_pendientes': verificar_ddjj_pendientes_firma(),
+        'ddjj_vencer': verificar_ddjj_por_vencer(),
+        'backup': crear_backup_automatico() is not None
+    }
+    
+    return jsonify(resultados)
+
+
+@app.route('/admin/alertas/estado', methods=['GET'])
+@login_requerido
+def estado_alertas():
+    """Verifica el estado de las alertas"""
+    if session.get('rol') != 'ADMIN':
+        return jsonify({'error': 'Acceso denegado'}), 403
+    
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        
+        # Contar pendientes
+        cur.execute("""
+            SELECT COUNT(*) FROM declaraciones_juradas 
+            WHERE estado = 'FIRMADA_AGENTE' AND activa = 1
+        """)
+        pendientes = cur.fetchone()[0]
+        
+        # Contar por vencer
+        cur.execute("""
+            SELECT COUNT(*) FROM declaraciones_juradas 
+            WHERE estado = 'FINALIZADA' AND activa = 1
+            AND date(fecha_envio) >= date('now', '-330 days')
+        """)
+        por_vencer = cur.fetchone()[0]
+        
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'ddjj_pendientes': pendientes,
+            'ddjj_por_vencer': por_vencer,
+            'email_configurado': bool(EMAIL_CONFIG['email_remitente'] and EMAIL_CONFIG['email_password'])
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ==========================
+# INICIALIZACIÓN DEL SISTEMA
+# ==========================
+def inicializar_sistema():
+    """Inicializa el sistema completo"""
+    print("🔧 Inicializando sistema...")
+    
+    # Crear directorios
+    os.makedirs('LOGS', exist_ok=True)
+    os.makedirs('BACKUPS', exist_ok=True)
+    os.makedirs('DOCUMENTOS_AGENTES', exist_ok=True)
+    os.makedirs('qr_ddjj', exist_ok=True)
+    os.makedirs('CERTIFICADOS', exist_ok=True)
+    os.makedirs('plantillas', exist_ok=True)
+    
+    # Inicializar base de datos
+    try:
+        init_db()
+    except Exception as e:
+        print(f"⚠️ Error en init_db: {e}")
+    
+    # Agregar columnas faltantes a legajos
+    try:
+        agregar_columnas_faltantes()
+    except Exception as e:
+        print(f"⚠️ Error en migración de columnas: {e}")
+    
+    # Agregar columnas de notificaciones
+    try:
+        agregar_columnas_notificaciones()
+    except Exception as e:
+        print(f"⚠️ Error en columnas notificaciones: {e}")
+    
+    # Crear índice
+    try:
+        crear_indice_codigo_validacion()
+    except Exception as e:
+        print(f"⚠️ Error creando índice: {e}")
+    
+    print("✅ Sistema inicializado correctamente")
+    print("")
+    print("📋 ALERTAS CONFIGURADAS (vía GitHub Actions):")
+    print("   - POST /api/alertas/ddjj_pendientes")
+    print("   - POST /api/alertas/ddjj_vencer")
+    print("   - POST /api/alertas/backup")
+    print("")
+    print("🔧 Admin: /admin/alertas/ejecutar (manual)")
+    print("📊 Estado: /admin/alertas/estado")
+
+
+# Ejecutar inicialización
+inicializar_sistema()
+
+
+# ==========================
+# INICIALIZACIÓN Y EJECUCIÓN (SOLO MODO LOCAL)
 # ==========================
 if __name__ == "__main__":
-    import os
-
     print("🔄 Iniciando sistema en modo local...")
-
-    # Inicialización segura
-    try:
-        with app.app_context():
-            init_db()
-            crear_backup()
-    except Exception as e:
-        print("Error en inicialización:", e)
-
-    # Alertas en hilo separado
-    try:
-        programar_alertas()
-        hilo_alertas.start()
-    except Exception as e:
-        print("Error en alertas:", e)
-
-    # Puerto dinámico (compatible con Render)
+    print("✅ Sistema listo. Alertas disponibles vía endpoints")
+    
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=True)
+    app.run(host="0.0.0.0", port=port, debug=False)
