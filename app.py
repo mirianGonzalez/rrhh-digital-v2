@@ -838,48 +838,6 @@ def _convertir_con_libreoffice(archivo_entrada, nombre_salida):
         print(f"❌ Error conversión LibreOffice: {e}")
         return None
 
-def agregar_columnas_faltantes():
-    """Agrega columnas faltantes a la tabla legajos"""
-    try:
-        conn = get_db()
-        cur = conn.cursor()
-        
-        # Obtener columnas actuales
-        cur.execute("PRAGMA table_info(legajos)")
-        columnas = [col[1] for col in cur.fetchall()]
-        
-        # Columnas que deben existir
-        columnas_necesarias = [
-            'lugar_nacimiento',
-            'telefono_fijo',
-            'telefono_referencia',
-            'parentesco_referencia',
-            'domicilio_piso',
-            'domicilio_depto',
-            'domicilio_barrio',
-            'croquis_domicilio',
-            'foto_path',
-            'tipo_personal',
-            'antiguedad',
-            'lugar_desempeno',
-            'obra_social'
-        ]
-        
-        # Agregar columnas faltantes
-        for columna in columnas_necesarias:
-            if columna not in columnas:
-                try:
-                    cur.execute(f"ALTER TABLE legajos ADD COLUMN {columna} TEXT")
-                    print(f"✅ Columna agregada: {columna}")
-                except Exception as e:
-                    print(f"⚠️ Error al agregar {columna}: {e}")
-        
-        conn.commit()
-        conn.close()
-        print("✅ Migración completada")
-        
-    except Exception as e:
-        print(f"❌ Error en migración: {e}")
 
 
 
@@ -1036,7 +994,7 @@ def crear_plantilla_oficial():
         logger.info("Plantilla oficial creada")
 
 # ==========================
-# FUNCIÓN DE MIGRACIÓN DE COLUMNAS
+# FUNCIÓN DE MIGRACIÓN DE COLUMNAS PARA LEGAJOS
 # ==========================
 def agregar_columnas_faltantes():
     """Agrega columnas faltantes a la tabla legajos"""
@@ -1082,12 +1040,33 @@ def agregar_columnas_faltantes():
         if columnas_agregadas:
             print(f"📦 Columnas agregadas: {', '.join(columnas_agregadas)}")
         else:
-            print("ℹ️ Todas las columnas ya existen")
+            print("ℹ️ Todas las columnas de legajos ya existen")
         
         return True
         
     except Exception as e:
-        print(f"❌ Error en migración: {e}")
+        print(f"❌ Error en migración de legajos: {e}")
+        return False
+
+
+# ==========================
+# FUNCIÓN PARA CREAR ÍNDICE DE CÓDIGO DE VALIDACIÓN
+# ==========================
+def crear_indice_codigo_validacion():
+    """Crea el índice para codigo_validacion si no existe"""
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        
+        # Crear índice (no causa error si ya existe)
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_ddjj_codigo ON declaraciones_juradas(codigo_validacion)")
+        conn.commit()
+        conn.close()
+        print("✅ Índice idx_ddjj_codigo creado/verificado")
+        return True
+        
+    except Exception as e:
+        print(f"⚠️ Error creando índice: {e}")
         return False
 
 
@@ -1187,14 +1166,16 @@ def init_db():
                 legajo_id TEXT NOT NULL,
                 anio INTEGER NOT NULL,
                 estado TEXT DEFAULT 'BORRADOR',
+                archivo_pdf TEXT,
+                hash_pdf TEXT,
+                codigo_validacion TEXT UNIQUE,
                 fecha_generacion TEXT,
                 fecha_envio TEXT,
                 usuario_genero TEXT,
                 usuario_finalizo TEXT,
-                archivo_pdf TEXT,
-                hash_pdf TEXT,
+                observaciones TEXT,
                 activa INTEGER DEFAULT 1,
-                FOREIGN KEY (legajo_id) REFERENCES legajos(legajo_id)
+                FOREIGN KEY(legajo_id) REFERENCES legajos(legajo_id)
             )
         """)
 
@@ -1351,6 +1332,19 @@ def init_db():
             """, ("admin", hashed, "ADMIN", "admin@rrhh.com", datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
             print("✅ Usuario admin creado")
 
+        # ==========================
+        # CREAR USUARIO DIRECTOR SI NO EXISTE
+        # ==========================
+        cur.execute("SELECT * FROM usuarios WHERE username = ?", ("director",))
+        if not cur.fetchone():
+            from werkzeug.security import generate_password_hash
+            hashed = generate_password_hash("Director2026!")
+            cur.execute("""
+                INSERT INTO usuarios (username, password, rol, email, fecha_creacion)
+                VALUES (?, ?, ?, ?, ?)
+            """, ("director", hashed, "DIRECTOR", "director@rrhh.com", datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+            print("✅ Usuario director creado")
+
         conn.commit()
         conn.close()
 
@@ -1369,11 +1363,17 @@ def inicializar_sistema():
     """Inicializa el sistema completo"""
     init_db()
     
-    # Agregar columnas faltantes después de init_db
+    # Agregar columnas faltantes a legajos
     try:
         agregar_columnas_faltantes()
     except Exception as e:
         print(f"⚠️ Error en migración de columnas: {e}")
+    
+    # Crear índice para código de validación
+    try:
+        crear_indice_codigo_validacion()
+    except Exception as e:
+        print(f"⚠️ Error creando índice: {e}")
     
     print("✅ Sistema inicializado correctamente")
 
