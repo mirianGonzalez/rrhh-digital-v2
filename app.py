@@ -4725,14 +4725,42 @@ def ejecutar_respaldo_programado():
         time.sleep(60)
 
 # Programar respaldo cada hora
-schedule.every(1).hours.do(crear_respaldo_manual)
+sch# ==========================
+# INICIALIZACIÓN DE RESPALDOS (COMPATIBLE CON GUNICORN)
+# ==========================
 
-# Iniciar el hilo de respaldos automáticos
-hilo_respaldos = threading.Thread(target=ejecutar_respaldo_programado, daemon=True)
-hilo_respaldos.start()
+# Crear un respaldo inicial si no existe ninguno
+def crear_respaldo_inicial():
+    """Crea un respaldo inicial si no hay ninguno"""
+    backup_dir = os.path.join(BASE_DIR, 'BACKUPS')
+    if os.path.exists(backup_dir):
+        backups = [f for f in os.listdir(backup_dir) if f.startswith('backup_') and f.endswith('.zip')]
+        if not backups:
+            crear_respaldo_manual()
+            print("📦 Respaldo inicial creado")
 
-print("✅ Respaldo automático programado cada hora")
-logger.info("✅ Respaldo automático programado cada hora")
+# Ejecutar respaldo inicial (no bloquea)
+try:
+    crear_respaldo_inicial()
+except Exception as e:
+    print(f"⚠️ Error al crear respaldo inicial: {e}")
+
+print("✅ Sistema de respaldos listo. Usa /admin/respaldos para gestionar")
+logger.info("✅ Sistema de respaldos listo")
+
+@app.route('/admin/backup/manual', methods=['POST'])
+@login_required
+def backup_manual():
+    """Crea un respaldo manual (acceso solo admin)"""
+    if session.get('rol') != 'ADMIN':
+        return jsonify({'error': 'Acceso denegado'}), 403
+    
+    archivo = crear_respaldo_manual()
+    if archivo:
+        return jsonify({'success': True, 'archivo': os.path.basename(archivo)})
+    else:
+        return jsonify({'success': False, 'error': 'Error al crear respaldo'}), 500
+        
 
 @app.route('/admin/respaldos')
 @login_required
