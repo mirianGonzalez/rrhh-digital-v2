@@ -995,7 +995,6 @@ def crear_plantilla_oficial():
 # ==========================
 def init_db():
     """Inicializa todas las tablas con la nueva estructura"""
-    
     try:
         conn = get_db()
         cur = conn.cursor()
@@ -1006,46 +1005,23 @@ def init_db():
         # TABLA USUARIOS
         # ==========================
         cur.execute("""
-            CREATE TABLE IF NOT EXISTS usuarios(
+            CREATE TABLE IF NOT EXISTS usuarios (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 username TEXT UNIQUE NOT NULL,
                 password TEXT NOT NULL,
                 rol TEXT NOT NULL,
                 email TEXT,
-                telefono TEXT,
-                activo INTEGER DEFAULT 1,
-                ultimo_acceso TEXT,
-                intentos_fallidos INTEGER DEFAULT 0,
+                legajo_id TEXT,
                 bloqueado INTEGER DEFAULT 0,
-                fecha_creacion TEXT DEFAULT CURRENT_TIMESTAMP
+                intentos_fallidos INTEGER DEFAULT 0,
+                ultimo_login TEXT,
+                fecha_creacion TEXT,
+                activo INTEGER DEFAULT 1
             )
         """)
 
         # ==========================
-        # USUARIO ADMIN
-        # ==========================
-        cur.execute("SELECT * FROM usuarios WHERE username = ?", ("admin",))
-        if not cur.fetchone():
-            from werkzeug.security import generate_password_hash
-
-            hashed = generate_password_hash("Admin2026!")
-            cur.execute("""
-                INSERT INTO usuarios (username, password, rol, email)
-                VALUES (?, ?, ?, ?)
-            """, ("admin", hashed, "ADMIN", "admin@rrhh.com"))
-
-            print("✅ Usuario admin creado")
-
-        conn.commit()
-        conn.close()
-
-        print("✅ Base de datos lista")
-
-    except Exception as e:
-        print("❌ Error inicializando DB:", e)
-
-        # ==========================
-        # TABLA LEGAJOS
+        # TABLA LEGAJOS (estructura completa)
         # ==========================
         cur.execute("""
             CREATE TABLE IF NOT EXISTS legajos(
@@ -1078,25 +1054,9 @@ def init_db():
                 categoria TEXT,
                 antiguedad TEXT,
                 lugar_desempeno TEXT,
-                actividad TEXT,
-                planta_permanente INTEGER DEFAULT 0,
-                planta_temporaria INTEGER DEFAULT 0,
-                enfermedad_preexistente TEXT,
-                vacuna_covid_dosis TEXT,
-                vacuna_gripe INTEGER DEFAULT 0,
-                vacuna_neumonia INTEGER DEFAULT 0,
-                seguro_vida INTEGER DEFAULT 0,
-                servicios_anteriores TEXT,
-                antiguedad_servicios TEXT,
-                trabaja_otra_reparticion INTEGER DEFAULT 0,
-                otra_reparticion_donde TEXT,
-                percibe_asig_fliares_hcd INTEGER DEFAULT 0,
-                percibe_asig_fliares_otro INTEGER DEFAULT 0,
+                obra_social TEXT,
                 estado TEXT DEFAULT 'Activo',
-                observaciones TEXT,
-                hash_legajo TEXT UNIQUE,
-                fecha_actualizacion TEXT DEFAULT CURRENT_TIMESTAMP,
-                usuario_actualizacion TEXT
+                activo INTEGER DEFAULT 1
             )
         """)
 
@@ -1109,18 +1069,11 @@ def init_db():
                 legajo TEXT NOT NULL,
                 tipo TEXT NOT NULL,
                 nombre_archivo TEXT NOT NULL,
-                ruta_original TEXT,
                 ruta_pdf TEXT NOT NULL,
-                hash_archivo TEXT UNIQUE NOT NULL,
                 fecha_subida TEXT,
-                subido_por TEXT,
-                estado TEXT DEFAULT 'ACTIVO',
-                anulado_por TEXT,
-                fecha_anulacion TEXT,
-                motivo_anulacion TEXT,
-                version INTEGER DEFAULT 1,
-                es_obligatorio INTEGER DEFAULT 0,
-                FOREIGN KEY(legajo) REFERENCES legajos(legajo_id)
+                usuario_subio TEXT,
+                activo INTEGER DEFAULT 1,
+                FOREIGN KEY (legajo) REFERENCES legajos(legajo_id)
             )
         """)
 
@@ -1132,63 +1085,433 @@ def init_db():
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 legajo_id TEXT NOT NULL,
                 anio INTEGER NOT NULL,
-                version INTEGER DEFAULT 1,
                 estado TEXT DEFAULT 'BORRADOR',
-                datos_json TEXT,
-                hash_datos TEXT,
-                archivo_docx TEXT,
-                archivo_pdf TEXT,
-                hash_pdf TEXT UNIQUE,
-                codigo_validacion TEXT UNIQUE,
-                qr_path TEXT,
                 fecha_generacion TEXT,
                 fecha_envio TEXT,
                 usuario_genero TEXT,
                 usuario_finalizo TEXT,
-                ip_generacion TEXT,
-                user_agent TEXT,
-                alerta_enviada INTEGER DEFAULT 0,
-                fecha_alerta TEXT,
-                observaciones TEXT,
+                archivo_pdf TEXT,
+                hash_pdf TEXT,
                 activa INTEGER DEFAULT 1,
-                es_historica INTEGER DEFAULT 0,
-                FOREIGN KEY(legajo_id) REFERENCES legajos(legajo_id)
+                FOREIGN KEY (legajo_id) REFERENCES legajos(legajo_id)
             )
         """)
 
         # ==========================
-        # CREAR ADMIN
+        # TABLA DDJJ_DATOS
+        # ==========================
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS ddjj_datos(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ddjj_id INTEGER NOT NULL,
+                fecha_nacimiento TEXT,
+                lugar_nacimiento TEXT,
+                dni TEXT,
+                estado_civil TEXT,
+                estudios_completos TEXT,
+                estudios_incompletos TEXT,
+                estudios_nivel TEXT,
+                titulo TEXT,
+                anios_cursados TEXT,
+                domicilio_barrio TEXT,
+                domicilio_chacra TEXT,
+                domicilio_calle TEXT,
+                domicilio_numero TEXT,
+                domicilio_piso TEXT,
+                domicilio_depto TEXT,
+                domicilio_localidad TEXT,
+                telefono_fijo TEXT,
+                telefono_celular TEXT,
+                correo TEXT,
+                telefono_referencia TEXT,
+                nombre_referencia TEXT,
+                parentesco_referencia TEXT,
+                fecha_ingreso TEXT,
+                categoria TEXT,
+                antiguedad TEXT,
+                planta_permanente INTEGER,
+                planta_temporaria INTEGER,
+                lugar_desempeno TEXT,
+                actividad TEXT,
+                enfermedad_preexistente TEXT,
+                vacuna_covid_dosis TEXT,
+                vacuna_gripe TEXT,
+                vacuna_neumonia TEXT,
+                percibe_asig_fliares_hcd INTEGER,
+                servicios_anteriores TEXT,
+                antiguedad_servicios TEXT,
+                trabaja_otra_reparticion INTEGER,
+                otra_reparticion_donde TEXT,
+                percibe_asig_fliares_otro INTEGER,
+                lugar TEXT,
+                fecha_declaracion TEXT,
+                firma_agente TEXT,
+                FOREIGN KEY (ddjj_id) REFERENCES declaraciones_juradas(id)
+            )
+        """)
+
+        # ==========================
+        # TABLA DDJJ_CONYUGE
+        # ==========================
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS ddjj_conyuge(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ddjj_id INTEGER NOT NULL,
+                apellido_nombre TEXT,
+                dni TEXT,
+                fecha_enlace TEXT,
+                lugar_enlace TEXT,
+                trabaja INTEGER,
+                razon_social TEXT,
+                FOREIGN KEY (ddjj_id) REFERENCES declaraciones_juradas(id)
+            )
+        """)
+
+        # ==========================
+        # TABLA DDJJ_FAMILIARES_CARGO
+        # ==========================
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS ddjj_familiares_cargo(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ddjj_id INTEGER NOT NULL,
+                orden INTEGER,
+                apellido_nombre TEXT,
+                parentesco TEXT,
+                convive INTEGER,
+                fecha_nacimiento TEXT,
+                edad INTEGER,
+                pri TEXT,
+                FOREIGN KEY (ddjj_id) REFERENCES declaraciones_juradas(id)
+            )
+        """)
+
+        # ==========================
+        # TABLA DDJJ_PADRES_HERMANOS
+        # ==========================
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS ddjj_padres_hermanos(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ddjj_id INTEGER NOT NULL,
+                orden INTEGER,
+                apellido_nombre TEXT,
+                parentesco TEXT,
+                convive INTEGER,
+                fecha_nacimiento TEXT,
+                dni TEXT,
+                FOREIGN KEY (ddjj_id) REFERENCES declaraciones_juradas(id)
+            )
+        """)
+
+        # ==========================
+        # TABLA FIRMAS_DIGITALES
+        # ==========================
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS firmas_digitales(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ddjj_id INTEGER NOT NULL,
+                tipo_firma TEXT NOT NULL,
+                firmante_id INTEGER,
+                firmante_nombre TEXT,
+                hash_documento TEXT,
+                firma_pkcs7 TEXT,
+                timestamp_firma TEXT,
+                ip_firma TEXT,
+                user_agent TEXT,
+                FOREIGN KEY (ddjj_id) REFERENCES declaraciones_juradas(id)
+            )
+        """)
+
+        # ==========================
+        # TABLA AUDITORIA
+        # ==========================
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS auditoria(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                usuario TEXT NOT NULL,
+                accion TEXT NOT NULL,
+                legajo_id TEXT,
+                detalle TEXT,
+                fecha TEXT,
+                ip TEXT,
+                user_agent TEXT
+            )
+        """)
+
+        # ==========================
+        # CREAR USUARIO ADMIN SI NO EXISTE
         # ==========================
         cur.execute("SELECT * FROM usuarios WHERE username = ?", ("admin",))
         if not cur.fetchone():
+            from werkzeug.security import generate_password_hash
             hashed = generate_password_hash("Admin2026!")
             cur.execute("""
-                INSERT INTO usuarios (username, password, rol, email)
-                VALUES (?, ?, ?, ?)
-            """, ("admin", hashed, "ADMIN", "admin@admin.com"))
-
-            logger.info("✅ Usuario admin creado")
-
-        conn.commit()
-        logger.info("✅ DB inicializada OK")
-
-    except Exception as e:
-        logger.error(f"❌ Error inicializando DB: {e}")
-
-        # ==========================
-        # ÍNDICES
-        # ==========================
-        cur.execute("CREATE INDEX IF NOT EXISTS idx_legajos_legajo_id ON legajos(legajo_id)")
-        cur.execute("CREATE INDEX IF NOT EXISTS idx_documentos_legajo ON documentos(legajo)")
+                INSERT INTO usuarios (username, password, rol, email, fecha_creacion)
+                VALUES (?, ?, ?, ?, ?)
+            """, ("admin", hashed, "ADMIN", "admin@rrhh.com", datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+            print("✅ Usuario admin creado")
 
         conn.commit()
         conn.close()
-        
 
-        logger.info("✅ Base de datos lista")
+        print("✅ Base de datos inicializada correctamente")
+
+        # Migrar estructura de legajos si es necesario
+        try:
+            migrar_legajos_estructura_completa()
+        except Exception as e:
+            print(f"⚠️ Error en migración: {e}")
 
     except Exception as e:
-        logger.error(f"❌ Error inicializando DB: {e}")
+        print("❌ Error inicializando DB:", e)
+        import traceback
+        traceback.print_exc()
+        
+
+def migrar_legajos_estructura_completa():
+    """Migra la tabla legajos a la estructura completa"""
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        
+        # Verificar si falta lugar_nacimiento
+        cur.execute("PRAGMA table_info(legajos)")
+        columnas = [col[1] for col in cur.fetchall()]
+        
+        if 'lugar_nacimiento' not in columnas:
+            print("🔄 Iniciando migración de estructura de legajos...")
+            
+            # 1. Crear tabla temporal con estructura completa
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS legajos_nueva(
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    legajo_id TEXT UNIQUE NOT NULL,
+                    apellido TEXT NOT NULL,
+                    nombre TEXT NOT NULL,
+                    dni TEXT UNIQUE,
+                    cuil TEXT UNIQUE,
+                    email TEXT,
+                    telefono TEXT,
+                    telefono_fijo TEXT,
+                    telefono_referencia TEXT,
+                    parentesco_referencia TEXT,
+                    fecha_nacimiento TEXT,
+                    lugar_nacimiento TEXT,
+                    nacionalidad TEXT,
+                    estado_civil TEXT,
+                    domicilio_calle TEXT,
+                    domicilio_numero TEXT,
+                    domicilio_piso TEXT,
+                    domicilio_depto TEXT,
+                    domicilio_barrio TEXT,
+                    domicilio_localidad TEXT,
+                    croquis_domicilio TEXT,
+                    foto_path TEXT,
+                    cargo TEXT,
+                    tipo_personal TEXT,
+                    fecha_ingreso TEXT,
+                    categoria TEXT,
+                    antiguedad TEXT,
+                    lugar_desempeno TEXT,
+                    obra_social TEXT,
+                    estado TEXT DEFAULT 'Activo',
+                    activo INTEGER DEFAULT 1
+                )
+            """)
+            
+            # 2. Copiar datos existentes
+            cur.execute("""
+                INSERT INTO legajos_nueva (
+                    id, legajo_id, apellido, nombre, dni, cuil, email, telefono,
+                    fecha_nacimiento, domicilio_calle, domicilio_numero, 
+                    domicilio_localidad, cargo, fecha_ingreso, estado
+                )
+                SELECT 
+                    id, legajo_id, apellido, nombre, dni, cuil, email, telefono,
+                    fecha_nacimiento, domicilio_calle, domicilio_numero, 
+                    COALESCE(domicilio_localidad, 'POSADAS'), cargo, fecha_ingreso, 
+                    COALESCE(estado, 'Activo')
+                FROM legajos
+            """)
+            
+            # 3. Eliminar tabla vieja y renombrar nueva
+            cur.execute("DROP TABLE legajos")
+            cur.execute("ALTER TABLE legajos_nueva RENAME TO legajos")
+            
+            conn.commit()
+            print("✅ Migración completada. Tabla legajos actualizada a estructura completa.")
+            
+        else:
+            print("ℹ️ La tabla legajos ya tiene la estructura completa.")
+            
+        conn.close()
+        return True
+        
+    except Exception as e:
+        print(f"❌ Error en migración: {e}")
+        return False
+
+def inicializar_datos_prueba():
+    """Inicializa datos de prueba con estructura completa de legajos"""
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        
+        # Verificar si ya hay datos
+        cur.execute("SELECT COUNT(*) FROM legajos WHERE legajo_id BETWEEN '90000' AND '99999'")
+        count = cur.fetchone()[0]
+        
+        if count > 0:
+            print(f"ℹ️ Ya existen {count} legajos de prueba. No se crearán nuevos.")
+            return True
+        
+        # Datos de prueba con estructura completa
+        legajos_prueba = [
+            {
+                'legajo_id': '90001',
+                'apellido': 'González',
+                'nombre': 'María Elena',
+                'dni': '12345678',
+                'cuil': '27-12345678-9',
+                'email': 'maria.gonzalez@ejemplo.com',
+                'telefono': '3764123456',
+                'telefono_fijo': '3764456789',
+                'telefono_referencia': '3764987654',
+                'parentesco_referencia': 'Madre',
+                'fecha_nacimiento': '15/03/1985',
+                'lugar_nacimiento': 'Posadas, Misiones',
+                'nacionalidad': 'Argentina',
+                'estado_civil': 'Casada',
+                'domicilio_calle': 'San Martín',
+                'domicilio_numero': '1234',
+                'domicilio_piso': '2',
+                'domicilio_depto': 'B',
+                'domicilio_barrio': 'Centro',
+                'domicilio_localidad': 'Posadas',
+                'cargo': 'Administrativo',
+                'tipo_personal': 'Planta Permanente',
+                'fecha_ingreso': '01/03/2010',
+                'categoria': 'Categoría 5',
+                'antiguedad': '13 años',
+                'lugar_desempeno': 'Dirección de RRHH',
+                'obra_social': 'IOMA',
+                'estado': 'Activo',
+                'activo': 1
+            },
+            {
+                'legajo_id': '90002',
+                'apellido': 'Rodríguez',
+                'nombre': 'Carlos Alberto',
+                'dni': '23456789',
+                'cuil': '20-23456789-1',
+                'email': 'carlos.rodriguez@ejemplo.com',
+                'telefono': '3764234567',
+                'telefono_fijo': '3764567890',
+                'telefono_referencia': '3764876543',
+                'parentesco_referencia': 'Hermano',
+                'fecha_nacimiento': '22/07/1980',
+                'lugar_nacimiento': 'Apóstoles, Misiones',
+                'nacionalidad': 'Argentina',
+                'estado_civil': 'Soltero',
+                'domicilio_calle': 'Bolívar',
+                'domicilio_numero': '567',
+                'domicilio_piso': '',
+                'domicilio_depto': '',
+                'domicilio_barrio': 'Villa Sarita',
+                'domicilio_localidad': 'Posadas',
+                'cargo': 'Técnico',
+                'tipo_personal': 'Contratado',
+                'fecha_ingreso': '15/05/2015',
+                'categoria': 'Categoría 3',
+                'antiguedad': '8 años',
+                'lugar_desempeno': 'Área de Sistemas',
+                'obra_social': 'OSEP',
+                'estado': 'Activo',
+                'activo': 1
+            },
+            {
+                'legajo_id': '90003',
+                'apellido': 'Fernández',
+                'nombre': 'Laura Beatriz',
+                'dni': '34567890',
+                'cuil': '27-34567890-2',
+                'email': 'laura.fernandez@ejemplo.com',
+                'telefono': '3764345678',
+                'telefono_fijo': '3764678901',
+                'telefono_referencia': '3764765432',
+                'parentesco_referencia': 'Padre',
+                'fecha_nacimiento': '10/11/1990',
+                'lugar_nacimiento': 'Oberá, Misiones',
+                'nacionalidad': 'Argentina',
+                'estado_civil': 'Soltera',
+                'domicilio_calle': 'Sarmiento',
+                'domicilio_numero': '890',
+                'domicilio_piso': '1',
+                'domicilio_depto': 'A',
+                'domicilio_barrio': 'Centro',
+                'domicilio_localidad': 'Posadas',
+                'cargo': 'Profesional',
+                'tipo_personal': 'Planta Permanente',
+                'fecha_ingreso': '20/01/2018',
+                'categoria': 'Categoría 4',
+                'antiguedad': '5 años',
+                'lugar_desempeno': 'Asesoría Legal',
+                'obra_social': 'IOMA',
+                'estado': 'Activo',
+                'activo': 1
+            }
+        ]
+        
+        # Insertar legajos de prueba
+        for legajo in legajos_prueba:
+            cur.execute("""
+                INSERT INTO legajos (
+                    legajo_id, apellido, nombre, dni, cuil, email, telefono,
+                    telefono_fijo, telefono_referencia, parentesco_referencia,
+                    fecha_nacimiento, lugar_nacimiento, nacionalidad, estado_civil,
+                    domicilio_calle, domicilio_numero, domicilio_piso, domicilio_depto,
+                    domicilio_barrio, domicilio_localidad, cargo, tipo_personal,
+                    fecha_ingreso, categoria, antiguedad, lugar_desempeno,
+                    obra_social, estado, activo
+                ) VALUES (
+                    :legajo_id, :apellido, :nombre, :dni, :cuil, :email, :telefono,
+                    :telefono_fijo, :telefono_referencia, :parentesco_referencia,
+                    :fecha_nacimiento, :lugar_nacimiento, :nacionalidad, :estado_civil,
+                    :domicilio_calle, :domicilio_numero, :domicilio_piso, :domicilio_depto,
+                    :domicilio_barrio, :domicilio_localidad, :cargo, :tipo_personal,
+                    :fecha_ingreso, :categoria, :antiguedad, :lugar_desempeno,
+                    :obra_social, :estado, :activo
+                )
+            """, legajo)
+        
+        conn.commit()
+        
+        # Crear algunos documentos de ejemplo
+        tipos_documentos = ['DNI', 'Título', 'Certificado', 'Declaración Jurada']
+        for legajo in legajos_prueba:
+            for tipo in tipos_documentos[:2]:  # 2 documentos por legajo
+                cur.execute("""
+                    INSERT INTO documentos (legajo, tipo, nombre_archivo, ruta_pdf, fecha_subida)
+                    VALUES (?, ?, ?, ?, ?)
+                """, (
+                    legajo['legajo_id'],
+                    tipo,
+                    f"{tipo}_{legajo['legajo_id']}.pdf",
+                    f"/app/DOCUMENTOS_AGENTES/{legajo['legajo_id']}_{tipo}.pdf",
+                    datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                ))
+        
+        conn.commit()
+        conn.close()
+        
+        print(f"✅ Datos de prueba inicializados: {len(legajos_prueba)} legajos creados")
+        print(f"📄 Documentos de ejemplo creados para cada legajo")
+        return True
+        
+    except Exception as e:
+        print(f"❌ Error inicializando datos de prueba: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
 
 def generar_documento_word(plantilla_path, datos, salida_path):
     """Genera documento Word desde plantilla (solo Windows si usa win32com)"""
@@ -3353,202 +3676,202 @@ def eliminar_usuario(user_id):
     flash("Usuario eliminado correctamente", "success")
     return redirect(url_for("listar_usuarios"))
 
-# ==========================
-# RUTAS DE PRUEBA Y DIAGNÓSTICO
-# ==========================
-@app.route("/inicializar_prueba")
-@login_requerido
-@rol_permitido(["ADMIN"])
-def inicializar_prueba():
-    if "usuario" not in session:
-        flash("Su sesión ha expirado. Por favor, inicie sesión nuevamente.", "error")
-        return redirect(url_for("login"))
-    
-    logger.info(f"Usuario {session['usuario']} iniciando pruebas")
-    
+def agregar_columna_lugar_nacimiento():
+    """Agrega la columna lugar_nacimiento si no existe"""
     try:
-        resultados = []
         conn = get_db()
         cur = conn.cursor()
         
-        cur.execute("SELECT id FROM usuarios WHERE username = 'test_rrhh'")
-        if not cur.fetchone():
-            hashed = generate_password_hash('Test2026!')
-            cur.execute("""
-                INSERT INTO usuarios (username, password, rol, email, fecha_creacion)
-                VALUES (?, ?, ?, ?, ?)
-            """, ('test_rrhh', hashed, 'RRHH', 'test@prueba.com', datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
-            resultados.append("✅ Usuario de prueba 'test_rrhh' creado (pass: Test2026!)")
-        else:
-            resultados.append("ℹ️ Usuario 'test_rrhh' ya existe")
+        # Verificar si la columna existe
+        cur.execute("PRAGMA table_info(legajos)")
+        columnas = [col[1] for col in cur.fetchall()]
         
-        legajos_creados = []
-        datos_legajos = [
+        if 'lugar_nacimiento' not in columnas:
+            cur.execute("ALTER TABLE legajos ADD COLUMN lugar_nacimiento TEXT")
+            conn.commit()
+            print("✅ Columna 'lugar_nacimiento' agregada correctamente")
+        else:
+            print("ℹ️ La columna 'lugar_nacimiento' ya existe")
+            
+        conn.close()
+        return True
+        
+    except Exception as e:
+        print(f"❌ Error al agregar columna: {e}")
+        return False
+
+# ==========================
+# RUTAS DE PRUEBA Y DIAGNÓSTICO
+# ==========================
+
+def inicializar_datos_prueba():
+    """Inicializa datos de prueba con estructura completa de legajos"""
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        
+        # Verificar si ya hay datos
+        cur.execute("SELECT COUNT(*) FROM legajos WHERE legajo_id BETWEEN '90000' AND '99999'")
+        count = cur.fetchone()[0]
+        
+        if count > 0:
+            print(f"ℹ️ Ya existen {count} legajos de prueba. No se crearán nuevos.")
+            return True
+        
+        # Datos de prueba con estructura completa
+        legajos_prueba = [
             {
                 'legajo_id': '90001',
                 'apellido': 'PEREZ',
                 'nombre': 'JUAN',
                 'dni': '12345678',
+                'cuil': '20-12345678-1',
                 'email': 'juan.perez@test.com',
                 'telefono': '3764123456',
-                'calle': 'BOLIVAR',
-                'numero': '1588'
+                'telefono_fijo': '',
+                'telefono_referencia': '',
+                'parentesco_referencia': '',
+                'fecha_nacimiento': '1985-03-15',
+                'lugar_nacimiento': 'Posadas, Misiones',
+                'nacionalidad': 'Argentina',
+                'estado_civil': 'Casado',
+                'domicilio_calle': 'Bolivar',
+                'domicilio_numero': '1588',
+                'domicilio_piso': '',
+                'domicilio_depto': '',
+                'domicilio_barrio': 'Centro',
+                'domicilio_localidad': 'Posadas',
+                'croquis_domicilio': '',
+                'foto_path': '',
+                'cargo': 'Administrativo',
+                'tipo_personal': 'Planta Permanente',
+                'fecha_ingreso': '2010-03-01',
+                'categoria': 'Categoría 5',
+                'antiguedad': '13 años',
+                'lugar_desempeno': 'Dirección de Personal',
+                'obra_social': 'IOMA',
+                'estado': 'Activo',
+                'activo': 1
             },
             {
                 'legajo_id': '90002',
                 'apellido': 'GOMEZ',
                 'nombre': 'MARIA',
                 'dni': '87654321',
+                'cuil': '27-87654321-2',
                 'email': 'maria.gomez@test.com',
                 'telefono': '3764123457',
-                'calle': 'SAN MARTIN',
-                'numero': '2500'
+                'telefono_fijo': '',
+                'telefono_referencia': '',
+                'parentesco_referencia': '',
+                'fecha_nacimiento': '1990-07-22',
+                'lugar_nacimiento': 'Apóstoles, Misiones',
+                'nacionalidad': 'Argentina',
+                'estado_civil': 'Soltera',
+                'domicilio_calle': 'San Martin',
+                'domicilio_numero': '2500',
+                'domicilio_piso': '',
+                'domicilio_depto': '',
+                'domicilio_barrio': 'Villa Sarita',
+                'domicilio_localidad': 'Posadas',
+                'croquis_domicilio': '',
+                'foto_path': '',
+                'cargo': 'Técnica',
+                'tipo_personal': 'Contratada',
+                'fecha_ingreso': '2015-05-15',
+                'categoria': 'Categoría 3',
+                'antiguedad': '8 años',
+                'lugar_desempeno': 'Área de Sistemas',
+                'obra_social': 'OSEP',
+                'estado': 'Activo',
+                'activo': 1
             },
             {
                 'legajo_id': '90003',
                 'apellido': 'RODRIGUEZ',
                 'nombre': 'CARLOS',
                 'dni': '11223344',
+                'cuil': '20-11223344-3',
                 'email': 'carlos.rodriguez@test.com',
                 'telefono': '3764123458',
-                'calle': 'AYACUCHO',
-                'numero': '1852'
+                'telefono_fijo': '',
+                'telefono_referencia': '',
+                'parentesco_referencia': '',
+                'fecha_nacimiento': '1980-11-10',
+                'lugar_nacimiento': 'Oberá, Misiones',
+                'nacionalidad': 'Argentina',
+                'estado_civil': 'Casado',
+                'domicilio_calle': 'Ayacucho',
+                'domicilio_numero': '1852',
+                'domicilio_piso': '',
+                'domicilio_depto': '',
+                'domicilio_barrio': 'Centro',
+                'domicilio_localidad': 'Posadas',
+                'croquis_domicilio': '',
+                'foto_path': '',
+                'cargo': 'Profesional',
+                'tipo_personal': 'Planta Permanente',
+                'fecha_ingreso': '2018-01-20',
+                'categoria': 'Categoría 4',
+                'antiguedad': '5 años',
+                'lugar_desempeno': 'Asesoría Legal',
+                'obra_social': 'IOMA',
+                'estado': 'Activo',
+                'activo': 1
             }
         ]
         
-        for datos in datos_legajos:
-            cur.execute("SELECT * FROM legajos WHERE legajo_id = ?", (datos['legajo_id'],))
-            if not cur.fetchone():
-                cur.execute("""
-                    INSERT INTO legajos (
-                        legajo_id, apellido, nombre, dni, cuil, email, telefono,
-                        fecha_nacimiento, lugar_nacimiento, estado_civil,
-                        domicilio_calle, domicilio_numero, domicilio_barrio, domicilio_localidad,
-                        cargo, tipo_personal, fecha_ingreso, categoria, estado
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """, (
-                    datos['legajo_id'], 
-                    datos['apellido'], 
-                    datos['nombre'], 
-                    datos['dni'],
-                    f"20-{datos['dni']}-1",
-                    datos['email'],
-                    datos['telefono'],
-                    f"198{random.randint(0, 9)}-0{random.randint(1, 9)}-{random.randint(10, 28)}",
-                    'POSADAS', 
-                    random.choice(['Soltero', 'Casado']),
-                    datos['calle'],
-                    datos['numero'], 
-                    '', 
-                    'POSADAS',
-                    random.choice(['Administrativo', 'Técnico', 'Profesional']),
-                    random.choice(['Planta Permanente', 'Contratado']),
-                    f"201{random.randint(0, 5)}-0{random.randint(1, 9)}-{random.randint(10, 28)}",
-                    str(random.randint(1, 5)), 
-                    'Activo'
-                ))
-                legajos_creados.append(datos['legajo_id'])
-                resultados.append(f"✅ Legajo {datos['legajo_id']} - {datos['apellido']}, {datos['nombre']} creado")
-                
-                carpeta_base = os.path.join(DOCUMENTOS_PATH, datos['legajo_id'])
-                for doc in DOCUMENTOS_OBLIGATORIOS[:5]:
-                    os.makedirs(os.path.join(carpeta_base, doc['id'].upper()), exist_ok=True)
-                
-            else:
-                resultados.append(f"ℹ️ Legajo {datos['legajo_id']} ya existe")
-                legajos_creados.append(datos['legajo_id'])
+        # Insertar legajos de prueba
+        for legajo in legajos_prueba:
+            cur.execute("""
+                INSERT INTO legajos (
+                    legajo_id, apellido, nombre, dni, cuil, email, telefono,
+                    telefono_fijo, telefono_referencia, parentesco_referencia,
+                    fecha_nacimiento, lugar_nacimiento, nacionalidad, estado_civil,
+                    domicilio_calle, domicilio_numero, domicilio_piso, domicilio_depto,
+                    domicilio_barrio, domicilio_localidad, croquis_domicilio, foto_path,
+                    cargo, tipo_personal, fecha_ingreso, categoria, antiguedad,
+                    lugar_desempeno, obra_social, estado, activo
+                ) VALUES (
+                    :legajo_id, :apellido, :nombre, :dni, :cuil, :email, :telefono,
+                    :telefono_fijo, :telefono_referencia, :parentesco_referencia,
+                    :fecha_nacimiento, :lugar_nacimiento, :nacionalidad, :estado_civil,
+                    :domicilio_calle, :domicilio_numero, :domicilio_piso, :domicilio_depto,
+                    :domicilio_barrio, :domicilio_localidad, :croquis_domicilio, :foto_path,
+                    :cargo, :tipo_personal, :fecha_ingreso, :categoria, :antiguedad,
+                    :lugar_desempeno, :obra_social, :estado, :activo
+                )
+            """, legajo)
         
         conn.commit()
+        conn.close()
         
-        registrar_auditoria(session["usuario"], "INICIALIZÓ PRUEBAS", None, 
-                           f"Legajos: {', '.join(legajos_creados)}")
-        
-        html_resultados = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Inicialización de Pruebas</title>
-            <style>
-                body {{ font-family: Arial; padding: 30px; background: #f0f0f0; }}
-                .container {{ max-width: 800px; margin: auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }}
-                h1 {{ color: #1e3c72; }}
-                .success {{ background: #e8f5e9; padding: 20px; border-radius: 8px; margin: 20px 0; }}
-                .success li {{ color: #2e7d32; margin: 10px 0; }}
-                .info {{ background: #e3f2fd; padding: 20px; border-radius: 8px; margin: 20px 0; }}
-                .info li {{ color: #1976d2; margin: 10px 0; }}
-                .btn {{ display: inline-block; padding: 10px 20px; background: #1e3c72; color: white; text-decoration: none; border-radius: 4px; margin-right: 10px; }}
-                .btn:hover {{ background: #2a5298; }}
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <h1>✅ INICIALIZACIÓN COMPLETADA</h1>
-                
-                <div class="success">
-                    <h3>Resultados:</h3>
-                    <ul>
-        """
-        
-        for r in resultados:
-            html_resultados += f"<li>{r}</li>"
-        
-        html_resultados += f"""
-                    </ul>
-                </div>
-                
-                <div class="info">
-                    <h3>Próximos pasos:</h3>
-                    <ul>
-                        <li>👉 Usuario de prueba: <strong>test_rrhh</strong> / <strong>Test2026!</strong></li>
-                        <li>👉 Legajos creados: <strong>{', '.join(legajos_creados)}</strong></li>
-                        <li>👉 Accedé a "Legajos" en el menú para verlos</li>
-                    </ul>
-                </div>
-                
-                <div style="margin-top:30px;">
-                    <a href="/legajos" class="btn">📋 Ver Legajos</a>
-                    <a href="/panel" class="btn">📊 Volver al Panel</a>
-                    <a href="/logout" class="btn" style="background:#666;">🚪 Cerrar Sesión</a>
-                </div>
-            </div>
-        </body>
-        </html>
-        """
-        
-        return html_resultados
+        print(f"✅ Datos de prueba inicializados: {len(legajos_prueba)} legajos creados")
+        return True
         
     except Exception as e:
-        logger.error(f"Error en inicialización: {str(e)}")
+        print(f"❌ Error inicializando datos de prueba: {e}")
         import traceback
-        error_detallado = traceback.format_exc()
-        
-        return f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Error en Inicialización</title>
-            <style>
-                body {{ font-family: Arial; padding: 30px; background: #f0f0f0; }}
-                .container {{ max-width: 800px; margin: auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }}
-                .error {{ background: #ffebee; padding: 20px; border-radius: 8px; margin: 20px 0; color: #c62828; }}
-                pre {{ background: #f5f5f5; padding: 15px; border-radius: 4px; overflow-x: auto; }}
-                .btn {{ display: inline-block; padding: 10px 20px; background: #1e3c72; color: white; text-decoration: none; border-radius: 4px; }}
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <h1 style="color:#c62828;">❌ ERROR EN INICIALIZACIÓN</h1>
-                <div class="error">
-                    <h3>Mensaje:</h3>
-                    <p>{str(e)}</p>
-                </div>
-                <h3>Detalle técnico:</h3>
-                <pre>{error_detallado}</pre>
-                <a href="/panel" class="btn">⬅️ Volver al Panel</a>
-            </div>
-        </body>
-        </html>
-        """
+        traceback.print_exc()
+        return False
+
+
+@app.route("/inicializar_prueba")
+@login_requerido
+@rol_permitido(["ADMIN"])
+def inicializar_prueba():
+    """Inicializa datos de prueba en el sistema"""
+    if session.get('rol') != 'ADMIN':
+        flash('Acceso denegado', 'danger')
+        return redirect(url_for('panel'))
+    
+    if inicializar_datos_prueba():
+        flash('✅ Datos de prueba inicializados correctamente', 'success')
+    else:
+        flash('❌ Error al inicializar datos de prueba', 'danger')
+    
+    return redirect(url_for('panel'))
+
 
 @app.route("/crear_ddjj_completa_final/<legajo_id>")
 def crear_ddjj_completa_final(legajo_id):
